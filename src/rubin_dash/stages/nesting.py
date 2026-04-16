@@ -9,15 +9,14 @@ from hats_import import pipeline_with_client
 from hats_import.catalog import ImportArguments
 from hats_import.margin_cache.margin_cache_arguments import MarginCacheArguments
 
-from typing import Optional
-
 from rubin_dash.config import NestedConfig, PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
 
 STAGE = "nesting"
 
 
-def run_nesting(cfg: PipelineConfig, nesting_filter: Optional[list[str]] = None) -> None:
+def run_nesting(cfg: PipelineConfig, nesting_filter: list[str] | None = None) -> None:
+    """Build nested light-curve catalogs by joining object and source catalogs."""
     hats_dir = cfg.run.hats_dir
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
@@ -58,7 +57,7 @@ def _build_nested_catalog(
         # Load and join each source catalog
         nested_cat = obj_cat
         for source_name, column_name in zip(
-            nested_cfg.source_catalogs, nested_cfg.nested_column_names
+            nested_cfg.source_catalogs, nested_cfg.nested_column_names, strict=False
         ):
             margin_path = margin_dir / f"{source_name}_{nested_cfg.margin_radius_arcsec}arcs"
             src_cat = lsdb.read_hats(hats_dir / source_name, margin_cache=margin_path)
@@ -109,9 +108,7 @@ def _sort_nested_sources(df, source_cols: list[str], sort_col: str):
     for col in source_cols:
         flat = df[col].nest.to_flat()
         df = df.drop(columns=[col])
-        df = df.join_nested(
-            flat.sort_values([flat.index.name, sort_col]), col
-        )
+        df = df.join_nested(flat.sort_values([flat.index.name, sort_col]), col)
     return df
 
 

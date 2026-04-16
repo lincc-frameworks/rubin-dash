@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import lsdb
 from upath import UPath
 
@@ -11,7 +9,8 @@ from rubin_dash.utils.dask_client import dask_client
 STAGE = "crossmatch"
 
 
-def run_crossmatch(cfg: PipelineConfig, collection_filter: Optional[list[str]] = None) -> None:
+def run_crossmatch(cfg: PipelineConfig, collection_filter: list[str] | None = None) -> None:
+    """Cross-match HATS collections against external survey catalogs."""
     from lsdb.io.to_association import to_association
 
     hats_dir = cfg.run.hats_dir

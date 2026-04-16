@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import pyarrow as pa
@@ -18,7 +17,8 @@ from rubin_dash.utils.readers import DimensionParquetReader
 STAGE = "import"
 
 
-def run_import(cfg: PipelineConfig, catalog_filter: Optional[list[str]] = None) -> None:
+def run_import(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> None:
+    """Import catalogs from parquet index files into HATS format."""
     raw_dir = cfg.run.raw_dir
     hats_dir = cfg.run.hats_dir
     hats_dir.mkdir(parents=True, exist_ok=True)
@@ -32,7 +32,7 @@ def run_import(cfg: PipelineConfig, catalog_filter: Optional[list[str]] = None) 
 
             index_files = list((raw_dir / "index" / catalog_name).glob("*.csv"))
 
-            schema_file: Optional[Path] = None
+            schema_file: Path | None = None
             if catalog_cfg.use_schema_file:
                 dimension_columns = set(pd.read_csv(index_files[0]).columns) - {"path"}
                 schema_file = _download_schema(catalog_name, raw_dir, list(dimension_columns))

@@ -11,6 +11,7 @@ from lsst.resources import ResourcePath
 
 
 class DimensionParquetReader(InputReader):
+    """Reads batched CSV index files pointing to parquet URIs, adding dimension columns from the index row."""
 
     def __init__(self, chunksize: int = 500_000, column_names=None, **kwargs):
         self.chunksize = chunksize
@@ -18,6 +19,7 @@ class DimensionParquetReader(InputReader):
         self.kwargs = kwargs
 
     def read(self, input_file, read_columns=None):
+        """Yield pyarrow Tables from a CSV index file, batched to chunksize rows."""
         self.regular_file_exists(input_file, **self.kwargs)
 
         columns = read_columns or self.column_names
@@ -33,9 +35,7 @@ class DimensionParquetReader(InputReader):
                 parquet_file = pq.ParquetFile(f, **self.kwargs)
                 if parquet_file.metadata.num_rows == 0:
                     continue
-                for smaller_table in parquet_file.iter_batches(
-                    batch_size=self.chunksize, columns=columns
-                ):
+                for smaller_table in parquet_file.iter_batches(batch_size=self.chunksize, columns=columns):
                     table = pa.Table.from_batches([smaller_table])
                     table = table.replace_schema_metadata()
 

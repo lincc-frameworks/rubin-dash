@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import json
 import subprocess
-from typing import Optional
 
 import lsdb
 
 from rubin_dash.config import PipelineConfig
 
 
-def run_generate_json(cfg: PipelineConfig, collection_filter: Optional[list[str]] = None) -> None:
+def run_generate_json(cfg: PipelineConfig, collection_filter: list[str] | None = None) -> None:
+    """Generate a JSON metadata file summarising all HATS collections for this version."""
     hats_dir = cfg.run.hats_dir
     run_cfg = cfg.run
 
@@ -60,8 +60,8 @@ def _generate_collection_json(collection_name: str, hats_dir, run_cfg) -> dict:
 
 
 def _directory_size(path) -> str:
-    SIZE_UNITS = {"G": "GiB", "M": "MiB", "K": "KiB", "T": "TiB"}
+    size_units = {"G": "GiB", "M": "MiB", "K": "KiB", "T": "TiB"}
     result = subprocess.run(["du", "-sh", path], capture_output=True, text=True, check=True)
     size_str = result.stdout.split("\t")[0]
     unit = size_str[-1]
-    return f"{size_str[:-1]} {SIZE_UNITS[unit]}"
+    return f"{size_str[:-1]} {size_units[unit]}"

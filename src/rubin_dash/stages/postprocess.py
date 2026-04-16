@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 import astropy.units as u
 import hats
@@ -21,15 +20,27 @@ from rubin_dash.utils.dask_client import dask_client
 STAGE = "postprocess"
 
 # Positional and high-precision time columns that must stay float64
-_PRESERVE_FLOAT64 = frozenset([
-    "ra", "dec", "raErr", "decErr",
-    "x", "y", "xErr", "yErr",
-    "coord_ra", "coord_dec", "coord_raErr", "coord_decErr",
-    "midpointMjdTai",
-])
+_PRESERVE_FLOAT64 = frozenset(
+    [
+        "ra",
+        "dec",
+        "raErr",
+        "decErr",
+        "x",
+        "y",
+        "xErr",
+        "yErr",
+        "coord_ra",
+        "coord_dec",
+        "coord_raErr",
+        "coord_decErr",
+        "midpointMjdTai",
+    ]
+)
 
 
-def run_postprocess(cfg: PipelineConfig, catalog_filter: Optional[list[str]] = None) -> None:
+def run_postprocess(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> None:
+    """Add magnitude columns, MJDs, and downcast float64 columns to float32."""
     raw_dir = cfg.run.raw_dir
     hats_dir = cfg.run.hats_dir
 
@@ -128,7 +139,8 @@ def _add_mjd_from_visit(table: pd.DataFrame, visit_map: dict) -> pd.DataFrame:
 
 def _cast_columns_float32(table: pd.DataFrame) -> pd.DataFrame:
     cols_to_cast = [
-        col for col, dtype in table.dtypes.items()
+        col
+        for col, dtype in table.dtypes.items()
         if col not in _PRESERVE_FLOAT64 and dtype == pd.ArrowDtype(pa.float64())
     ]
     return table.astype({col: pd.ArrowDtype(pa.float32()) for col in cols_to_cast})

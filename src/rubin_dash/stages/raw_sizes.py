@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -12,7 +11,8 @@ from tqdm import tqdm
 from rubin_dash.config import CatalogConfig, PipelineConfig
 
 
-def run_raw_sizes(cfg: PipelineConfig, catalog_filter: Optional[list[str]] = None) -> None:
+def run_raw_sizes(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> None:
+    """Sample raw parquet files to estimate partition sizes and write index CSVs."""
     raw_dir = cfg.run.raw_dir
     index_dir = raw_dir / "index"
     index_dir.mkdir(parents=True, exist_ok=True)
@@ -52,9 +52,7 @@ def _build_sizes_csv(catalog_name: str, catalog_cfg: CatalogConfig, raw_dir: Pat
     print(f"  {catalog_name}: estimated pixel_threshold between {lo:_} and {hi:_}")
 
 
-def _write_index_files(
-    catalog_name: str, catalog_cfg: CatalogConfig, raw_dir: Path, index_dir: Path
-) -> None:
+def _write_index_files(catalog_name: str, catalog_cfg: CatalogConfig, raw_dir: Path, index_dir: Path) -> None:
     """Group the sizes CSV by group_by columns and write one index CSV per group."""
     ref_frame = pd.read_csv(raw_dir / "sizes" / f"{catalog_name}.csv")
     desired_columns = catalog_cfg.dims + ["path"]

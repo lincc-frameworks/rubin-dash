@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import shutil
 
-from typing import Optional
-
 from hats_import import pipeline_with_client
 from hats_import.collection.arguments import CollectionArguments
 
@@ -13,7 +11,8 @@ from rubin_dash.utils.dask_client import dask_client
 STAGE = "collections"
 
 
-def run_collections(cfg: PipelineConfig, collection_filter: Optional[list[str]] = None) -> None:
+def run_collections(cfg: PipelineConfig, collection_filter: list[str] | None = None) -> None:
+    """Build HATS collections with margin and index from nested catalogs."""
     hats_dir = cfg.run.hats_dir
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:

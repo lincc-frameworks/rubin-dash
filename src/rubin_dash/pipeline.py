@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import time
+
 import typer
 
 from rubin_dash.config import PipelineConfig
@@ -31,6 +30,7 @@ LSST_STAGES = {"butler", "raw_sizes", "import"}
 
 
 def check_lsst() -> None:
+    """Verify the LSST stack is importable; exit with a helpful message if not."""
     try:
         import lsst.resources  # noqa: F401
     except ImportError:
@@ -40,14 +40,15 @@ def check_lsst() -> None:
             "  source /sdf/group/rubin/sw/loadLSST.sh && setup lsst_distrib",
             err=True,
         )
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 def resolve_stages(
     cfg: PipelineConfig,
-    stages_opt: Optional[str],
-    from_stage_opt: Optional[str],
+    stages_opt: str | None,
+    from_stage_opt: str | None,
 ) -> list[str]:
+    """Return the ordered list of stages to run, validated against STAGE_ORDER."""
     if stages_opt and from_stage_opt:
         typer.echo("Error: --stages and --from-stage are mutually exclusive.", err=True)
         raise typer.Exit(1)
@@ -56,7 +57,9 @@ def resolve_stages(
         requested = [s.strip() for s in stages_opt.split(",")]
     elif from_stage_opt:
         if from_stage_opt not in STAGE_ORDER:
-            typer.echo(f"Error: unknown stage '{from_stage_opt}'. Valid stages: {', '.join(STAGE_ORDER)}", err=True)
+            typer.echo(
+                f"Error: unknown stage '{from_stage_opt}'. Valid stages: {', '.join(STAGE_ORDER)}", err=True
+            )
             raise typer.Exit(1)
         start = STAGE_ORDER.index(from_stage_opt)
         requested = [s for s in STAGE_ORDER[start:] if s in cfg.stages.enabled]
@@ -65,7 +68,10 @@ def resolve_stages(
 
     invalid = set(requested) - set(STAGE_ORDER)
     if invalid:
-        typer.echo(f"Error: unknown stage(s): {', '.join(sorted(invalid))}. Valid stages: {', '.join(STAGE_ORDER)}", err=True)
+        typer.echo(
+            f"Error: unknown stage(s): {', '.join(sorted(invalid))}. Valid stages: {', '.join(STAGE_ORDER)}",
+            err=True,
+        )
         raise typer.Exit(1)
 
     return [s for s in STAGE_ORDER if s in requested]
@@ -74,8 +80,8 @@ def resolve_stages(
 def preflight_checks(
     stages_to_run: list[str],
     cfg: PipelineConfig,
-    nesting_filter: Optional[list[str]],
-    collection_filter: Optional[list[str]],
+    nesting_filter: list[str] | None,
+    collection_filter: list[str] | None,
 ) -> None:
     """Check that each stage's required inputs are either produced earlier in this run
     or already exist on disk. Collected and reported together before anything runs."""
@@ -172,10 +178,11 @@ def constrain_to_catalogs(
 def run_stage(
     stage: str,
     cfg: PipelineConfig,
-    catalog_filter: Optional[list[str]],
-    nesting_filter: Optional[list[str]],
-    collection_filter: Optional[list[str]],
+    catalog_filter: list[str] | None,
+    nesting_filter: list[str] | None,
+    collection_filter: list[str] | None,
 ) -> None:
+    """Dispatch a single stage to its run function."""
     if stage == "butler":
         run_butler(cfg, catalog_filter)
     elif stage == "raw_sizes":
@@ -196,11 +203,11 @@ def run_stage(
 
 def run_pipeline(
     cfg: PipelineConfig,
-    stages_opt: Optional[str],
-    from_stage_opt: Optional[str],
-    catalogs_opt: Optional[str],
-    nestings_opt: Optional[str],
-    collections_opt: Optional[str],
+    stages_opt: str | None,
+    from_stage_opt: str | None,
+    catalogs_opt: str | None,
+    nestings_opt: str | None,
+    collections_opt: str | None,
 ) -> None:
     """Resolve options, run preflight checks, and execute the pipeline."""
 

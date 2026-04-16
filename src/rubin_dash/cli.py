@@ -1,10 +1,10 @@
+# ruff: noqa: B008
 from __future__ import annotations
 
 import os
 import socket
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -15,20 +15,27 @@ app = typer.Typer(help="DASH Import Pipeline — convert Rubin DRP outputs to HA
 
 @app.command()
 def run(
-    config_paths: list[Path] = typer.Option(..., "--config", "-c", help="TOML config file(s). Specify multiple times to layer overrides on top of each other (left to right)."),
-    stages: Optional[str] = typer.Option(
+    config_paths: list[Path] = typer.Option(
+        ...,
+        "--config",
+        "-c",
+        help="TOML config file(s). Specify multiple times to layer overrides (left to right).",
+    ),
+    stages: str | None = typer.Option(
         None, "--stages", help="Comma-separated list of stages to run (e.g. butler,import,postprocess)."
     ),
-    from_stage: Optional[str] = typer.Option(
+    from_stage: str | None = typer.Option(
         None, "--from-stage", help="Run all enabled stages starting from this one."
     ),
-    catalogs: Optional[str] = typer.Option(
+    catalogs: str | None = typer.Option(
         None, "--catalogs", help="Comma-separated catalog names to process (e.g. dia_object,object)."
     ),
-    nestings: Optional[str] = typer.Option(
-        None, "--nestings", help="Comma-separated nested catalog names to build (e.g. object_lc,dia_object_lc)."
+    nestings: str | None = typer.Option(
+        None,
+        "--nestings",
+        help="Comma-separated nested catalog names to build (e.g. object_lc,dia_object_lc).",
     ),
-    collections: Optional[str] = typer.Option(
+    collections: str | None = typer.Option(
         None, "--collections", help="Comma-separated collection names to build (e.g. object_collection)."
     ),
 ) -> None:
@@ -75,7 +82,7 @@ def notebook(
     subprocess.run(["jupyter", "notebook", "--no-browser", f"--port={port}"])
 
 
-def _detect_ssh_client_host() -> Optional[str]:
+def _detect_ssh_client_host() -> str | None:
     """Return the short hostname of the machine that SSH'd into this one, if detectable."""
     ssh_client = os.environ.get("SSH_CLIENT", "")
     if not ssh_client:
