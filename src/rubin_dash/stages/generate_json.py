@@ -6,7 +6,7 @@ from typing import Optional
 
 import lsdb
 
-from dash.config import PipelineConfig
+from rubin_dash.config import PipelineConfig
 
 
 def run_generate_json(cfg: PipelineConfig, collection_filter: Optional[list[str]] = None) -> None:

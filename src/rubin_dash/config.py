@@ -281,7 +281,7 @@ def _deep_merge(base: dict, override: dict) -> dict:
 
 
 def _load_builtin_defaults() -> dict:
-    ref = importlib.resources.files("dash").joinpath("default_config.toml")
+    ref = importlib.resources.files("rubin_dash").joinpath("default_config.toml")
     with ref.open("rb") as f:
         return tomllib.load(f)
 

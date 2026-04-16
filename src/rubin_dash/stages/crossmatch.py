@@ -5,8 +5,8 @@ from typing import Optional
 import lsdb
 from upath import UPath
 
-from dash.config import CrossmatchSurveyConfig, PipelineConfig
-from dash.utils.dask_client import dask_client
+from rubin_dash.config import CrossmatchSurveyConfig, PipelineConfig
+from rubin_dash.utils.dask_client import dask_client
 
 STAGE = "crossmatch"
 

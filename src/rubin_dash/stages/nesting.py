@@ -11,8 +11,8 @@ from hats_import.margin_cache.margin_cache_arguments import MarginCacheArguments
 
 from typing import Optional
 
-from dash.config import NestedConfig, PipelineConfig
-from dash.utils.dask_client import dask_client
+from rubin_dash.config import NestedConfig, PipelineConfig
+from rubin_dash.utils.dask_client import dask_client
 
 STAGE = "nesting"
 

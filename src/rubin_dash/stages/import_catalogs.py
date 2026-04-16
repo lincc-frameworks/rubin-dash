@@ -11,9 +11,9 @@ from hats_import import pipeline_with_client
 from hats_import.catalog.arguments import ImportArguments
 from lsst.resources import ResourcePath
 
-from dash.config import PipelineConfig
-from dash.utils.dask_client import dask_client
-from dash.utils.readers import DimensionParquetReader
+from rubin_dash.config import PipelineConfig
+from rubin_dash.utils.dask_client import dask_client
+from rubin_dash.utils.readers import DimensionParquetReader
 
 STAGE = "import"
 

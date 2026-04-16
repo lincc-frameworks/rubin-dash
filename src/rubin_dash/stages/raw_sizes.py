@@ -9,7 +9,7 @@ import pyarrow.parquet as pq
 from lsst.resources import ResourcePath
 from tqdm import tqdm
 
-from dash.config import CatalogConfig, PipelineConfig
+from rubin_dash.config import CatalogConfig, PipelineConfig
 
 
 def run_raw_sizes(cfg: PipelineConfig, catalog_filter: Optional[list[str]] = None) -> None:

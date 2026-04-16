@@ -9,15 +9,15 @@ from typing import Optional
 
 import typer
 
-from dash.config import PipelineConfig, load_config
-from dash.stages.butler import run_butler
-from dash.stages.collections import run_collections
-from dash.stages.crossmatch import run_crossmatch
-from dash.stages.generate_json import run_generate_json
-from dash.stages.import_catalogs import run_import
-from dash.stages.nesting import run_nesting
-from dash.stages.postprocess import run_postprocess
-from dash.stages.raw_sizes import run_raw_sizes
+from rubin_dash.config import PipelineConfig, load_config
+from rubin_dash.stages.butler import run_butler
+from rubin_dash.stages.collections import run_collections
+from rubin_dash.stages.crossmatch import run_crossmatch
+from rubin_dash.stages.generate_json import run_generate_json
+from rubin_dash.stages.import_catalogs import run_import
+from rubin_dash.stages.nesting import run_nesting
+from rubin_dash.stages.postprocess import run_postprocess
+from rubin_dash.stages.raw_sizes import run_raw_sizes
 
 app = typer.Typer(help="DASH Import Pipeline — convert Rubin DRP outputs to HATS catalogs.")
 

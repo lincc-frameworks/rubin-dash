@@ -7,8 +7,8 @@ from typing import Optional
 from hats_import import pipeline_with_client
 from hats_import.collection.arguments import CollectionArguments
 
-from dash.config import PipelineConfig
-from dash.utils.dask_client import dask_client
+from rubin_dash.config import PipelineConfig
+from rubin_dash.utils.dask_client import dask_client
 
 STAGE = "collections"
 

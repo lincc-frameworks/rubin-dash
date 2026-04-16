@@ -44,10 +44,10 @@ dev = [
 ]
 
 [project.scripts]
-dash = "dash.cli:app"
+rubin_dash = "rubin_dash.cli:app"
 
 [tool.setuptools.package-data]
-"dash" = ["default_config.toml"]
+"rubin_dash" = ["default_config.toml"]
 
 [build-system]
 requires = [

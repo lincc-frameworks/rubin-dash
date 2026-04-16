@@ -15,8 +15,8 @@ from hats.io import paths
 from hats.io.parquet_metadata import write_parquet_metadata
 from tqdm.auto import tqdm
 
-from dash.config import PipelineConfig
-from dash.utils.dask_client import dask_client
+from rubin_dash.config import PipelineConfig
+from rubin_dash.utils.dask_client import dask_client
 
 STAGE = "postprocess"
 

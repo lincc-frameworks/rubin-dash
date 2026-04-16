@@ -10,7 +10,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from tqdm import tqdm
 
-from dash.config import PipelineConfig
+from rubin_dash.config import PipelineConfig
 
 
 def run_butler(cfg: PipelineConfig, catalog_filter: Optional[list[str]] = None) -> None:
