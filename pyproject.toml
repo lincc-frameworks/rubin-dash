@@ -18,6 +18,16 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
+    "typer",
+    "pydantic>=2",
+    "hats-import",
+    "lsdb",
+    "astropy",
+    "dask[distributed]",
+    "pandas",
+    "pyarrow",
+    "tqdm",
+    "universal-pathlib",
 ]
 
 [project.urls]
@@ -32,6 +42,12 @@ dev = [
     "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
 ]
+
+[project.scripts]
+dash = "dash.cli:app"
+
+[tool.setuptools.package-data]
+"dash" = ["default_config.toml"]
 
 [build-system]
 requires = [
