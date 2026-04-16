@@ -1,9 +1,9 @@
 
-.. dash documentation main file.
+.. rubin_dash documentation main file.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to dash's documentation!
+Welcome to rubin_dash's documentation!
 ========================================================================================
 
 DRP Afterburner for Super HATS - importing rubin catalogs to HATS

@@ -57,7 +57,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/dash/_version.py"
+write_to = "src/rubin_dash/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -112,4 +112,4 @@ ignore = [
 
 
 [tool.coverage.run]
-omit=["src/dash/_version.py"]
+omit=["src/rubin_dash/_version.py"]
