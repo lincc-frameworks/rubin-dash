@@ -206,14 +206,7 @@ rubin-dash run --config base.toml --config this_week.toml --config overrides.tom
 ### 2. Run the full pipeline
 
 ```shell
-rubin-dash run --config my_config.toml >& run.out &
-```
-
-Monitor progress:
-
-```shell
-tail -f run.out
-top -U $USER
+rubin-dash run --config my_config.toml
 ```
 
 ### CLI options
