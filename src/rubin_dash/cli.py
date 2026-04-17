@@ -50,7 +50,7 @@ def run(
 def notebook(
     port: int = typer.Option(8769, "--port", "-p", help="Port for the Jupyter notebook server."),
     login_node: str = typer.Option(
-        "sdflogin003.slac.stanford.edu",
+        "s3dflogin.slac.stanford.edu",
         "--login-node",
         help="SLAC login node hostname for the SSH tunnel.",
     ),
