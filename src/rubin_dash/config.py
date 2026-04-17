@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import importlib.resources
+import tomllib
 from pathlib import Path
 from typing import Any
 
-import tomllib
 from pydantic import BaseModel, model_validator
 
 # ImportArguments fields that are always set programmatically — not allowed in import_args config

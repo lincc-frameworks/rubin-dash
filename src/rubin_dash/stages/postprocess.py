@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import astropy.units as u
@@ -151,7 +151,7 @@ def _rewrite_catalog_metadata(catalog, hats_dir: Path) -> None:
     parquet_rows = write_parquet_metadata(dest)
     partition_info = PartitionInfo.read_from_dir(dest)
     partition_info.write_to_file(paths.get_partition_info_pointer(dest))
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     catalog.catalog_info.copy_and_update(
         total_rows=parquet_rows,
         hats_creation_date=now.strftime("%Y-%m-%dT%H:%M%Z"),
