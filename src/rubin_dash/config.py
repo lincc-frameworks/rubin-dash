@@ -323,7 +323,7 @@ def load_config(paths: str | PathLike[str] | Iterable[str | PathLike[str]]) -> P
 
     Files are applied left to right; later files override earlier ones.
     """
-    if isinstance(paths, (str, PathLike)):
+    if isinstance(paths, str | PathLike):
         paths = [paths]
 
     merged = _load_builtin_defaults()
