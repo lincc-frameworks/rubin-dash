@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections import Counter
 from pathlib import Path
 
 import pandas as pd
@@ -36,7 +37,13 @@ def run_butler(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> 
 
 def _get_uris_from_butler(butler, dataset_type: str, raw_dir: Path) -> None:
     start = time.perf_counter()
-    refs = butler.query_datasets(dataset_type, limit=None)
+    refs = list(butler.query_datasets(dataset_type, limit=None))
+    duplicates = {did: n for did, n in Counter(ref.dataId for ref in refs).items() if n > 1}
+    if duplicates:
+        raise ValueError(
+            f"{dataset_type}: {len(duplicates)} dataId(s) appear in multiple collections: "
+            + ", ".join(str(did) for did in duplicates)
+        )
     uris = butler._datastore.getManyURIs(refs)
     paths = [value.primaryURI.geturl() for value in uris.values()]
 

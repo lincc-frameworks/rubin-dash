@@ -44,7 +44,7 @@ dev = [
 ]
 
 [project.scripts]
-rubin_dash = "rubin_dash.cli:app"
+rubin-dash = "rubin_dash.cli:app"
 
 [tool.setuptools.package-data]
 "rubin_dash" = ["default_config.toml"]
