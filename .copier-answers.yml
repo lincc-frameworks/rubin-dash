@@ -14,14 +14,13 @@ include_benchmarks: false
 include_docs: true
 include_notebooks: true
 mypy_type_checking: none
-package_name: dash
+package_name: rubin_dash
 project_description: DRP Afterburner for Super HATS - importing rubin catalogs to
     HATS
 project_license: MIT
 project_name: rubin-dash
 project_organization: lincc-frameworks
 python_versions:
-- '3.10'
 - '3.11'
 - '3.12'
 - '3.13'
