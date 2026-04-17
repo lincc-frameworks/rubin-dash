@@ -254,7 +254,7 @@ This starts a Jupyter server and prints the SSH tunnel command you need to run
 on your laptop to forward the port. It will look something like:
 
 ```shell
-ssh -J user@sdflogin003.slac.stanford.edu,user@sdfiana004 \
+ssh -J user@s3dflogin.slac.stanford.edu,user@sdfiana004 \
     -L 8769:localhost:8769 \
     user@sdfmilan005
 ```
