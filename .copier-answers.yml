@@ -21,7 +21,6 @@ project_license: MIT
 project_name: rubin-dash
 project_organization: lincc-frameworks
 python_versions:
-- '3.10'
 - '3.11'
 - '3.12'
 - '3.13'
