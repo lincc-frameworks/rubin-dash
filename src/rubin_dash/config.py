@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.resources
 import tomllib
+from collections.abc import Iterable
+from os import PathLike
 from pathlib import Path
 from typing import Any
 
@@ -316,12 +318,12 @@ def _load_builtin_defaults() -> dict:
         return tomllib.load(f)
 
 
-def load_config(paths: Path | list[Path]) -> PipelineConfig:
+def load_config(paths: str | PathLike[str] | Iterable[str | PathLike[str]]) -> PipelineConfig:
     """Load pipeline config by merging built-in defaults with one or more TOML files.
 
     Files are applied left to right; later files override earlier ones.
     """
-    if isinstance(paths, Path):
+    if isinstance(paths, (str, PathLike)):
         paths = [paths]
 
     merged = _load_builtin_defaults()
