@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 
+import human_readable
 import lsdb
 
 from rubin_dash.config import PipelineConfig
@@ -52,7 +53,9 @@ def _generate_collection_json(collection_name: str, hats_dir, run_cfg) -> dict:
             "numRows": len(catalog),
             "numColumns": len(catalog.all_columns),
             "numPartitions": len(catalog.get_healpix_pixels()),
-            "sizeOnDisk": _directory_size(collection_path),
+            "sizeOnDisk": human_readable.file_size(
+                int(catalog.hc_structure.catalog_info.hats_estsize) * 1024, binary=True
+            ),
             "hatsBuilder": catalog.hc_structure.catalog_info.extra_dict()["hats_builder"],
         },
         "badges": [{"title": "Available only on USDF"}],
