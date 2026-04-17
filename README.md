@@ -284,5 +284,6 @@ out in `#dm-algorithms-pipelines` on the Rubin Observatory Slack.
 conda create -n rubin-dash python=3.11
 conda activate rubin-dash
 pip install -e ".[dev]"
-pre-commit install
+chmod +x .setup_dev.sh
+./.setup_dev.sh
 ```
