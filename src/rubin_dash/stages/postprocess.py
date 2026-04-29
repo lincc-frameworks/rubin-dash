@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from tqdm.auto import tqdm
 
 from rubin_dash.config import PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
+
+logger = logging.getLogger(__name__)
 
 STAGE = "postprocess"
 
@@ -86,9 +89,14 @@ def _postprocess_catalog(
         )
         for pixel in catalog.get_healpix_pixels()
     ]
+    skipped = 0
     for future in tqdm(as_completed(futures), desc=catalog_name, total=len(futures)):
         if future.status == "error":
             raise future.exception()
+        if not future.result():
+            skipped += 1
+    if skipped:
+        logger.info("%s: skipped %d already-processed partition(s)", catalog_name, skipped)
     _rewrite_catalog_metadata(catalog, hats_dir)
 
 
@@ -98,8 +106,11 @@ def _process_partition(
     flux_col_prefixes: list[str],
     add_mjds: bool,
     visit_map: dict,
-) -> None:
+) -> bool:
+    """Process one partition. Returns False if already processed and skipped."""
     file_path = hats.io.pixel_catalog_file(catalog_dir, target_pixel)
+    if _is_already_processed(file_path.path, flux_col_prefixes, add_mjds):
+        return False
     table = pd.read_parquet(file_path, dtype_backend="pyarrow")
     if flux_col_prefixes:
         table = _append_mag_and_magerr(table, flux_col_prefixes)
@@ -110,6 +121,17 @@ def _process_partition(
         pa.Table.from_pandas(table, preserve_index=False).replace_schema_metadata(),
         file_path.path,
     )
+    return True
+
+
+def _is_already_processed(file_path, flux_col_prefixes: list[str], add_mjds: bool) -> bool:
+    """Check partition schema (no data loaded) to see if postprocessing has already run."""
+    if not flux_col_prefixes and not add_mjds:
+        return False
+    existing = set(pq.read_schema(file_path).names)
+    if flux_col_prefixes and not all(f"{p}Mag" in existing for p in flux_col_prefixes):
+        return False
+    return not (add_mjds and "midpointMjdTai" not in existing)
 
 
 def _append_mag_and_magerr(table: pd.DataFrame, flux_col_prefixes: list[str]) -> pd.DataFrame:
