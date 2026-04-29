@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import shutil
 import tempfile
 from pathlib import Path
@@ -11,6 +12,8 @@ from hats_import.margin_cache.margin_cache_arguments import MarginCacheArguments
 
 from rubin_dash.config import NestedConfig, PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
+
+logger = logging.getLogger(__name__)
 
 STAGE = "nesting"
 
@@ -85,7 +88,9 @@ def _build_nested_catalog(
             valid_default_cols = [c for c in nested_cfg.default_columns if c in actual_cols]
             missing = sorted(set(nested_cfg.default_columns) - actual_cols)
             if missing:
-                print(f"Warning: requested default columns missing from {nested_name}: {', '.join(missing)}")
+                logger.warning(
+                    "Requested default columns missing from %s: %s", nested_name, ", ".join(missing)
+                )
             addl_props["hats_cols_default"] = ",".join(valid_default_cols)
 
         reimport_args = ImportArguments.reimport_from_hats(

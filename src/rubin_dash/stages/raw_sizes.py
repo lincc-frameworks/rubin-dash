@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -9,6 +10,8 @@ from lsst.resources import ResourcePath
 from tqdm import tqdm
 
 from rubin_dash.config import CatalogConfig, PipelineConfig
+
+logger = logging.getLogger(__name__)
 
 
 def run_raw_sizes(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> None:
@@ -26,7 +29,7 @@ def _build_sizes_csv(catalog_name: str, catalog_cfg: CatalogConfig, raw_dir: Pat
     """Join refs CSV with paths and sample 100 files to estimate pixel thresholds."""
     paths_file = raw_dir / "paths" / f"{catalog_name}.txt"
     paths = [p.strip() for p in paths_file.read_text(encoding="utf8").splitlines() if p.strip()]
-    print(f"Found {len(paths)} files for {catalog_name}")
+    logger.info("Found %d files for %s", len(paths), catalog_name)
 
     ref_frame = pd.read_csv(raw_dir / "refs" / f"{catalog_name}.csv")
     ref_frame["path"] = paths
@@ -49,7 +52,7 @@ def _build_sizes_csv(catalog_name: str, catalog_cfg: CatalogConfig, raw_dir: Pat
     gb1 = 1024 * 1024 * 1024
     lo = int(mb300 / total_size * total_rows)
     hi = int(gb1 / total_size * total_rows)
-    print(f"  {catalog_name}: estimated pixel_threshold between {lo:_} and {hi:_}")
+    logger.info("  %s: estimated pixel_threshold between %s and %s", catalog_name, f"{lo:_}", f"{hi:_}")
 
 
 def _write_index_files(catalog_name: str, catalog_cfg: CatalogConfig, raw_dir: Path, index_dir: Path) -> None:
@@ -65,4 +68,4 @@ def _write_index_files(catalog_name: str, catalog_cfg: CatalogConfig, raw_dir: P
     for counter, (_, group) in enumerate(groups):
         group.to_csv(out_dir / f"{counter:03d}.csv", index=False)
 
-    print(f"Wrote {counter + 1} index files for {catalog_name}")
+    logger.info("Wrote %d index files for %s", counter + 1, catalog_name)

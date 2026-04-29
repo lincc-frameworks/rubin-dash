@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pandas as pd
@@ -14,6 +15,8 @@ from rubin_dash.config import PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
 from rubin_dash.utils.readers import DimensionParquetReader
 
+logger = logging.getLogger(__name__)
+
 STAGE = "import"
 
 
@@ -26,9 +29,9 @@ def run_import(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
         for catalog_name, catalog_cfg in cfg.enabled_catalogs(catalog_filter).items():
             if is_valid_catalog(hats_dir / catalog_name):
-                print(f"Skipping {catalog_name} — already imported.\n")
+                logger.info("Skipping %s — already imported.", catalog_name)
                 continue
-            print(f"Starting import for {catalog_name}...\n")
+            logger.info("Starting import for %s...", catalog_name)
 
             index_files = list((raw_dir / "index" / catalog_name).glob("*.csv"))
 

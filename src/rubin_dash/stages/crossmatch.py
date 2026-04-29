@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
+
 import lsdb
 from upath import UPath
 
 from rubin_dash.config import CrossmatchSurveyConfig, PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
+
+logger = logging.getLogger(__name__)
 
 STAGE = "crossmatch"
 
@@ -49,7 +53,7 @@ def run_crossmatch(cfg: PipelineConfig, collection_filter: list[str] | None = No
                     join_column_association=join_col,
                     join_id_column=survey_cfg.join_id_column,
                 )
-                print(f"Saved {xmatch_name}")
+                logger.info("Saved %s", xmatch_name)
 
 
 def _open_survey(survey_cfg: CrossmatchSurveyConfig):
