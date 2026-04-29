@@ -31,3 +31,6 @@ def setup_logging(log_file: Path | None = None) -> None:
             )
         )
         logger.addHandler(file_handler)
+        logger.info("Logging to %s", log_file)
+    else:
+        logger.info("File logging disabled.")
