@@ -106,9 +106,7 @@ def _build_nested_catalog(
         valid_default_cols = [c for c in nested_cfg.default_columns if c in actual_cols]
         missing = sorted(set(nested_cfg.default_columns) - actual_cols)
         if missing:
-            logger.warning(
-                "Requested default columns missing from %s: %s", nested_name, ", ".join(missing)
-            )
+            logger.warning("Requested default columns missing from %s: %s", nested_name, ", ".join(missing))
         addl_props["hats_cols_default"] = ",".join(valid_default_cols)
 
     logger.info("[%s] Reimporting from intermediate catalog...", nested_name)
