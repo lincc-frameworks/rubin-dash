@@ -5,6 +5,7 @@ import logging
 import os
 import socket
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -58,7 +59,8 @@ def run(
     from rubin_dash.pipeline import run_pipeline
 
     cfg = load_config(config_paths)
-    default_log_file = cfg.run.output_dir / "logs" / f"{cfg.run.version}.log"
+    timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+    default_log_file = cfg.run.output_dir / "logs" / f"{cfg.run.version}_{timestamp}.log"
     resolved_log_file = None if no_log else (log_file or default_log_file)
     setup_logging(resolved_log_file)
 
