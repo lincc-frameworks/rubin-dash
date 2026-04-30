@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import shutil
 import time
 
 import typer
@@ -237,15 +238,25 @@ def run_pipeline(
 
     preflight_checks(stages_to_run, cfg, nesting_filter, collection_filter)
 
+    cfg.run.pipeline_state_dir.mkdir(parents=True, exist_ok=True)
+
     total_start = time.perf_counter()
     for stage in stages_to_run:
+        marker = cfg.run.pipeline_state_dir / f"{stage}.done"
+        if cfg.run.resume and marker.exists():
+            logger.info("[%s] already complete — skipping. (delete %s to re-run)", stage, marker)
+            continue
         stage_start = time.perf_counter()
         logger.info("[%s] starting...", stage)
         run_stage(stage, cfg, catalog_filter, nesting_filter, collection_filter)
+        marker.touch()
         elapsed = time.perf_counter() - stage_start
         h, rem = divmod(int(elapsed), 3600)
         m, s = divmod(rem, 60)
         logger.info("[%s] done in %02d:%02d:%02d\n", stage, h, m, s)
+
+    if cfg.run.pipeline_state_dir.exists():
+        shutil.rmtree(cfg.run.pipeline_state_dir)
 
     total = time.perf_counter() - total_start
     h, rem = divmod(int(total), 3600)

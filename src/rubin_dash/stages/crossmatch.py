@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 import lsdb
+from hats.io.validation import is_valid_catalog
 from upath import UPath
 
 from rubin_dash.config import CrossmatchSurveyConfig, PipelineConfig
@@ -41,6 +42,11 @@ def run_crossmatch(cfg: PipelineConfig, collection_filter: list[str] | None = No
                 )
 
                 xmatch_name = f"{collection.hc_structure.catalog_name}_x_{survey_name}"
+                xmatch_path = hats_dir / collection_name / xmatch_name
+                if cfg.run.resume and is_valid_catalog(xmatch_path):
+                    logger.info("Skipping '%s' — already exists.", xmatch_name)
+                    continue
+
                 join_col = f"{survey_cfg.join_id_column}{survey_cfg.suffix}"
 
                 to_association(

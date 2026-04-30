@@ -32,6 +32,12 @@ class RunConfig(BaseModel):
     output_dir: Path
     run: str | None = None
     visit_table_name: str = "visit_table"
+    resume: bool = True
+
+    @property
+    def pipeline_state_dir(self) -> Path:
+        """Directory for per-stage completion markers."""
+        return self.hats_dir / ".pipeline_state"
 
     @property
     def butler_collection(self) -> str:
