@@ -116,10 +116,11 @@ def _process_partition(
     if add_mjds:
         table = _add_mjd_from_visit(table, visit_map)
     table = _cast_columns_float32(table)
-    pq.write_table(
-        pa.Table.from_pandas(table, preserve_index=False).replace_schema_metadata(),
-        file_path.path,
-    )
+    arrow_table = pa.Table.from_pandas(table, preserve_index=False).replace_schema_metadata()
+    del table
+    pq.write_table(arrow_table, file_path.path)
+    del arrow_table
+    pa.default_memory_pool().release_unused()
     return True
 
 
