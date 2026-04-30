@@ -58,16 +58,13 @@ def run_postprocess(cfg: PipelineConfig, catalog_filter: list[str] | None = None
         visit_map = visit_table.set_index("visitId")["expMidptMJD"].to_dict()
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
-        # Scatter the visit_map once per worker so tasks reference a single
-        # managed copy instead of deserializing the dict on every invocation.
-        visit_map_handle = client.scatter(visit_map, broadcast=True) if visit_map else visit_map
         for catalog_name, catalog_cfg in catalogs.items():
             _postprocess_catalog(
                 catalog_name=catalog_name,
                 hats_dir=hats_dir,
                 flux_col_prefixes=catalog_cfg.flux_columns,
                 add_mjds=catalog_cfg.add_mjds,
-                visit_map=visit_map_handle,
+                visit_map=visit_map,
                 client=client,
             )
 
@@ -83,13 +80,22 @@ def _postprocess_catalog(
     catalog_dir = hats_dir / catalog_name
     catalog = hats.read_hats(catalog_dir)
     pixels = catalog.get_healpix_pixels()
+
+    # Scatter the visit_map once per worker so tasks reference a single
+    # managed copy instead of deserializing the dict on every invocation.
+    # Wrap in a list — passing the dict directly makes scatter treat its
+    # keys as task keys and return a dict of futures.
+    visit_map_handle = visit_map
+    if visit_map:
+        [visit_map_handle] = client.scatter([visit_map], broadcast=True)
+
     process_fn = partial(
         _process_partition,
         catalog_dir,
         flux_col_prefixes=flux_col_prefixes,
         add_mjds=add_mjds,
     )
-    futures = client.map(process_fn, pixels, visit_map=visit_map)
+    futures = client.map(process_fn, pixels, visit_map=visit_map_handle)
     skipped = 0
     for future in tqdm(as_completed(futures), desc=catalog_name, total=len(futures)):
         if future.status == "error":
