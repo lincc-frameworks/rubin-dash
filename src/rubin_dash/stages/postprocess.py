@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 
 import astropy.units as u
@@ -9,7 +10,6 @@ import hats
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from dask import delayed
 from dask.distributed import as_completed
 from hats.catalog import PartitionInfo
 from hats.io import paths
@@ -80,18 +80,14 @@ def _postprocess_catalog(
     catalog_dir = hats_dir / catalog_name
     catalog = hats.read_hats(catalog_dir)
     pixels = catalog.get_healpix_pixels()
-    delayed_func = delayed(_process_partition)
-    delayed_tasks = [
-        delayed_func(
-            catalog_dir=catalog_dir,
-            target_pixel=pixel,
-            flux_col_prefixes=flux_col_prefixes,
-            add_mjds=add_mjds,
-            visit_map=visit_map,
-        )
-        for pixel in tqdm(pixels, desc=f"{catalog_name} [delaying]", total=len(pixels))
-    ]
-    futures = client.compute(delayed_tasks)
+    process_fn = partial(
+        _process_partition,
+        catalog_dir,
+        flux_col_prefixes=flux_col_prefixes,
+        add_mjds=add_mjds,
+        visit_map=visit_map,
+    )
+    futures = client.map(process_fn, pixels)
     skipped = 0
     for future in tqdm(as_completed(futures), desc=catalog_name, total=len(futures)):
         if future.status == "error":
