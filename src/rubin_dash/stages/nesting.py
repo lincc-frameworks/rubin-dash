@@ -76,7 +76,6 @@ def _build_nested_catalog(
         for source_name, column_name in zip(
             nested_cfg.source_catalogs, nested_cfg.nested_column_names, strict=False
         ):
-            logger.info("[%s] Joining '%s'...", nested_name, source_name)
             margin_path = hats_dir / f"{source_name}_{nested_cfg.margin_radius_arcsec}arcs"
             src_cat = lsdb.read_hats(hats_dir / source_name, margin_cache=margin_path)
             nested_cat = nested_cat.join_nested(
@@ -86,7 +85,7 @@ def _build_nested_catalog(
                 nested_column_name=column_name,
             )
 
-        logger.info("[%s] Sorting and writing intermediate catalog...", nested_name)
+        logger.info("[%s] Joining and writing intermediate nested catalog...", nested_name)
         source_cols = nested_cfg.nested_column_names
         nested_cat = nested_cat.map_partitions(
             lambda df: _sort_nested_sources(df, source_cols, nested_cfg.sort_column)
