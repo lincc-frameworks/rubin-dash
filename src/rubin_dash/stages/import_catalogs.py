@@ -28,7 +28,7 @@ def run_import(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> 
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
         for catalog_name, catalog_cfg in cfg.enabled_catalogs(catalog_filter).items():
-            if is_valid_catalog(hats_dir / catalog_name):
+            if catalog_cfg.resume and is_valid_catalog(hats_dir / catalog_name):
                 logger.info("Skipping %s — already imported.", catalog_name)
                 continue
             logger.info("Starting import for %s...", catalog_name)
@@ -45,6 +45,7 @@ def run_import(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> 
                 output_artifact_name=catalog_name,
                 input_file_list=index_files,
                 file_reader=DimensionParquetReader(chunksize=catalog_cfg.chunksize),
+                resume=catalog_cfg.resume,
                 **({"use_schema_file": schema_file} if schema_file else {}),
                 **catalog_cfg.import_args,
             )

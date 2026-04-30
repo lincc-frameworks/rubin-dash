@@ -17,6 +17,7 @@ _IMPORT_ARGS_MANAGED = frozenset(
         "input_file_list",
         "file_reader",
         "use_schema_file",  # handled via the top-level use_schema_file bool
+        "resume",  # handled via the top-level resume bool
     }
 )
 
@@ -89,6 +90,7 @@ class CatalogConfig(BaseModel):
     add_mjds: bool = False
     use_schema_file: bool = False
     chunksize: int = 500_000  # DimensionParquetReader batch size
+    resume: bool = True
     import_args: dict[str, Any] = {}
 
     @model_validator(mode="after")

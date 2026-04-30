@@ -62,7 +62,7 @@ dec_column       = "dec"
 catalog_type     = "object"
 pixel_threshold  = 5_000_000
 simple_progress_bar = true
-resume           = true
+
 
 [catalogs.dia_source]
 dims             = ["tract"]
@@ -78,7 +78,7 @@ dec_column       = "dec"
 catalog_type     = "source"
 pixel_threshold  = 4_000_000
 simple_progress_bar = true
-resume           = true
+
 
 [catalogs.dia_object_forced_source]
 dims             = ["patch", "tract"]
@@ -94,7 +94,7 @@ dec_column       = "coord_dec"
 catalog_type     = "source"
 pixel_threshold  = 25_000_000
 simple_progress_bar = true
-resume           = true
+
 
 [catalogs.object]
 dims             = ["tract"]
@@ -117,7 +117,7 @@ dec_column       = "coord_dec"
 catalog_type     = "object"
 pixel_threshold  = 300_000
 simple_progress_bar = true
-resume           = true
+
 
 [catalogs.source]
 dims             = ["band", "day_obs", "physical_filter", "visit"]
@@ -133,7 +133,7 @@ dec_column       = "dec"
 catalog_type     = "source"
 pixel_threshold  = 1_000_000
 simple_progress_bar = true
-resume           = true
+
 
 [catalogs.object_forced_source]
 dims             = ["patch", "tract"]
@@ -149,7 +149,7 @@ dec_column       = "coord_dec"
 catalog_type     = "source"
 pixel_threshold  = 25_000_000
 simple_progress_bar = true
-resume           = true
+
 
 # ---------------------------------------------------------------------------
 # Nested catalogs
