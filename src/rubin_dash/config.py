@@ -138,6 +138,7 @@ class NestedConfig(BaseModel):
     nested_column_names: list[str]  # parallel to source_catalogs
     sort_column: str = "midpointMjdTai"
     margin_radius_arcsec: int = 2
+    resume: bool = True
     pixel_threshold: int = 15_000
     highest_healpix_order: int = 11
     skymap_alt_orders: list[int] = [2, 4, 6]
