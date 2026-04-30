@@ -58,13 +58,16 @@ def run_postprocess(cfg: PipelineConfig, catalog_filter: list[str] | None = None
         visit_map = visit_table.set_index("visitId")["expMidptMJD"].to_dict()
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
+        # Scatter the visit_map once per worker so tasks reference a single
+        # managed copy instead of deserializing the dict on every invocation.
+        visit_map_handle = client.scatter(visit_map, broadcast=True) if visit_map else visit_map
         for catalog_name, catalog_cfg in catalogs.items():
             _postprocess_catalog(
                 catalog_name=catalog_name,
                 hats_dir=hats_dir,
                 flux_col_prefixes=catalog_cfg.flux_columns,
                 add_mjds=catalog_cfg.add_mjds,
-                visit_map=visit_map,
+                visit_map=visit_map_handle,
                 client=client,
             )
 
@@ -85,9 +88,8 @@ def _postprocess_catalog(
         catalog_dir,
         flux_col_prefixes=flux_col_prefixes,
         add_mjds=add_mjds,
-        visit_map=visit_map,
     )
-    futures = client.map(process_fn, pixels)
+    futures = client.map(process_fn, pixels, visit_map=visit_map)
     skipped = 0
     for future in tqdm(as_completed(futures), desc=catalog_name, total=len(futures)):
         if future.status == "error":
