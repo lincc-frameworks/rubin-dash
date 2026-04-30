@@ -80,15 +80,16 @@ def _postprocess_catalog(
     catalog_dir = hats_dir / catalog_name
     catalog = hats.read_hats(catalog_dir)
     pixels = catalog.get_healpix_pixels()
+    delayed_func = delayed(_process_partition)
     delayed_tasks = [
-        delayed(_process_partition)(
+        delayed_func(
             catalog_dir=catalog_dir,
             target_pixel=pixel,
             flux_col_prefixes=flux_col_prefixes,
             add_mjds=add_mjds,
             visit_map=visit_map,
         )
-        for pixel in pixels
+        for pixel in tqdm(pixels, desc=f"{catalog_name} [delaying]", total=len(pixels))
     ]
     futures = client.compute(delayed_tasks)
     skipped = 0
