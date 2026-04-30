@@ -59,6 +59,7 @@ def run_postprocess(cfg: PipelineConfig, catalog_filter: list[str] | None = None
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
         for catalog_name, catalog_cfg in catalogs.items():
+            logger.info("Starting postprocess for %s...", catalog_name)
             _postprocess_catalog(
                 catalog_name=catalog_name,
                 hats_dir=hats_dir,

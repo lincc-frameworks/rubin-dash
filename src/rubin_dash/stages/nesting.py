@@ -25,6 +25,7 @@ def run_nesting(cfg: PipelineConfig, nesting_filter: list[str] | None = None) ->
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
         for nested_name, nested_cfg in cfg.enabled_nestings(nesting_filter).items():
+            logger.info("Starting nesting for %s...", nested_name)
             _build_nested_catalog(
                 nested_name=nested_name,
                 nested_cfg=nested_cfg,
@@ -48,8 +49,9 @@ def _build_nested_catalog(
     for source_name in nested_cfg.source_catalogs:
         margin_path = hats_dir / f"{source_name}_{nested_cfg.margin_radius_arcsec}arcs"
         if nested_cfg.resume and _is_valid_margin_cache(margin_path, nested_cfg.margin_radius_arcsec):
-            logger.info("Reusing margin cache for '%s'.", source_name)
+            logger.info("[%s] Reusing margin cache for '%s'.", nested_name, source_name)
         else:
+            logger.info("[%s] Building margin cache for '%s'...", nested_name, source_name)
             args = MarginCacheArguments(
                 input_catalog_path=hats_dir / source_name,
                 output_path=hats_dir,
@@ -63,7 +65,7 @@ def _build_nested_catalog(
     intermediate_path = hats_dir / f"{nested_name}_intermediate"
 
     if nested_cfg.resume and is_valid_catalog(intermediate_path):
-        logger.info("Reusing intermediate catalog for '%s'.", nested_name)
+        logger.info("[%s] Reusing intermediate catalog.", nested_name)
         cols_cat = lsdb.open_catalog(intermediate_path)
     else:
         # Load object catalog
@@ -74,6 +76,7 @@ def _build_nested_catalog(
         for source_name, column_name in zip(
             nested_cfg.source_catalogs, nested_cfg.nested_column_names, strict=False
         ):
+            logger.info("[%s] Joining '%s'...", nested_name, source_name)
             margin_path = hats_dir / f"{source_name}_{nested_cfg.margin_radius_arcsec}arcs"
             src_cat = lsdb.read_hats(hats_dir / source_name, margin_cache=margin_path)
             nested_cat = nested_cat.join_nested(
@@ -83,7 +86,7 @@ def _build_nested_catalog(
                 nested_column_name=column_name,
             )
 
-        # Sort sources within each object by MJD
+        logger.info("[%s] Sorting and writing intermediate catalog...", nested_name)
         source_cols = nested_cfg.nested_column_names
         nested_cat = nested_cat.map_partitions(
             lambda df: _sort_nested_sources(df, source_cols, nested_cfg.sort_column)
@@ -109,6 +112,7 @@ def _build_nested_catalog(
             )
         addl_props["hats_cols_default"] = ",".join(valid_default_cols)
 
+    logger.info("[%s] Reimporting from intermediate catalog...", nested_name)
     reimport_args = ImportArguments.reimport_from_hats(
         intermediate_path,
         output_dir=hats_dir,

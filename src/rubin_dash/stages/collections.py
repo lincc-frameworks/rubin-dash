@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import shutil
 
 from hats_import import pipeline_with_client
@@ -7,6 +8,8 @@ from hats_import.collection.arguments import CollectionArguments
 
 from rubin_dash.config import PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
+
+logger = logging.getLogger(__name__)
 
 STAGE = "collections"
 
@@ -17,6 +20,7 @@ def run_collections(cfg: PipelineConfig, collection_filter: list[str] | None = N
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
         for collection_name, collection_cfg in cfg.enabled_collections(collection_filter).items():
+            logger.info("Starting collections for %s...", collection_name)
             nested_name = collection_cfg.nested_catalog
             collection_dir = hats_dir / collection_name
             nested_dest = collection_dir / nested_name

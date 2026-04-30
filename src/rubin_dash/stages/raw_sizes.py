@@ -21,6 +21,7 @@ def run_raw_sizes(cfg: PipelineConfig, catalog_filter: list[str] | None = None) 
     index_dir.mkdir(parents=True, exist_ok=True)
 
     for catalog_name, catalog_cfg in cfg.enabled_catalogs(catalog_filter).items():
+        logger.info("Starting raw sizes for %s...", catalog_name)
         _build_sizes_csv(catalog_name, catalog_cfg, raw_dir)
         _write_index_files(catalog_name, catalog_cfg, raw_dir, index_dir)
 

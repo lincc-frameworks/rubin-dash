@@ -30,6 +30,7 @@ def run_crossmatch(cfg: PipelineConfig, collection_filter: list[str] | None = No
             for collection in collections:
                 collection_props = collection.hc_collection.collection_properties
                 collection_name = collection_props.name
+                logger.info("Starting crossmatch for %s x %s...", collection_name, survey_name)
                 lsst_id_col = next(iter(collection_props.all_indexes))
 
                 xmatch = collection.crossmatch(

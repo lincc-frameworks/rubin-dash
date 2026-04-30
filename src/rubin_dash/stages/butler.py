@@ -34,6 +34,7 @@ def run_butler(cfg: PipelineConfig, catalog_filter: list[str] | None = None) -> 
     butler = Butler(cfg.run.repo, collections=collections)
 
     for catalog_name in cfg.enabled_catalogs(catalog_filter):
+        logger.info("Starting butler export for %s...", catalog_name)
         _get_uris_from_butler(butler, catalog_name, raw_dir)
 
     _get_visits_from_butler(butler, cfg.run.instrument, cfg.run.visit_table_name, raw_dir)
