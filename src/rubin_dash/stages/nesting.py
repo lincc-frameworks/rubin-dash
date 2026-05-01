@@ -6,7 +6,7 @@ from pathlib import Path
 
 import hats
 import lsdb
-from hats.io.validation import is_valid_catalog
+from hats.io.validation import is_valid_catalog, is_valid_collection
 from hats_import import pipeline_with_client
 from hats_import.catalog import ImportArguments
 from hats_import.margin_cache.margin_cache_arguments import MarginCacheArguments
@@ -64,7 +64,7 @@ def _build_nested_catalog(
 
     intermediate_path = hats_dir / f"{nested_name}_intermediate"
 
-    if nested_cfg.resume and is_valid_catalog(intermediate_path):
+    if nested_cfg.resume and is_valid_collection(intermediate_path):
         logger.info("[%s] Reusing intermediate catalog.", nested_name)
         cols_cat = lsdb.open_catalog(intermediate_path)
     else:
