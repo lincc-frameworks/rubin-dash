@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import subprocess
 
 import human_readable
 import lsdb
 
 from rubin_dash.config import PipelineConfig
+
+logger = logging.getLogger(__name__)
 
 
 def run_generate_json(cfg: PipelineConfig, collection_filter: list[str] | None = None) -> None:
@@ -22,7 +25,7 @@ def run_generate_json(cfg: PipelineConfig, collection_filter: list[str] | None =
     out_path = hats_dir / f"{run_cfg.version}.json"
     with open(out_path, "w") as f:
         json.dump(collections_json, f)
-    print(f"Saved {out_path}")
+    logger.info("Saved %s", out_path)
 
 
 def _generate_collection_json(collection_name: str, hats_dir, run_cfg) -> dict:

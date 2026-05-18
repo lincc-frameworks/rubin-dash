@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 
 import astropy.units as u
@@ -16,6 +18,8 @@ from tqdm.auto import tqdm
 
 from rubin_dash.config import PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
+
+logger = logging.getLogger(__name__)
 
 STAGE = "postprocess"
 
@@ -55,6 +59,7 @@ def run_postprocess(cfg: PipelineConfig, catalog_filter: list[str] | None = None
 
     with dask_client(cfg.dask.for_stage(STAGE)) as client:
         for catalog_name, catalog_cfg in catalogs.items():
+            logger.info("Starting postprocess for %s...", catalog_name)
             _postprocess_catalog(
                 catalog_name=catalog_name,
                 hats_dir=hats_dir,
@@ -75,20 +80,31 @@ def _postprocess_catalog(
 ) -> None:
     catalog_dir = hats_dir / catalog_name
     catalog = hats.read_hats(catalog_dir)
-    futures = [
-        client.submit(
-            _process_partition,
-            catalog_dir=catalog_dir,
-            target_pixel=pixel,
-            flux_col_prefixes=flux_col_prefixes,
-            add_mjds=add_mjds,
-            visit_map=visit_map,
-        )
-        for pixel in catalog.get_healpix_pixels()
-    ]
+    pixels = catalog.get_healpix_pixels()
+
+    # Scatter the visit_map once per worker so tasks reference a single
+    # managed copy instead of deserializing the dict on every invocation.
+    # Wrap in a list — passing the dict directly makes scatter treat its
+    # keys as task keys and return a dict of futures.
+    visit_map_handle = visit_map
+    if visit_map:
+        [visit_map_handle] = client.scatter([visit_map], broadcast=True)
+
+    process_fn = partial(
+        _process_partition,
+        catalog_dir,
+        flux_col_prefixes=flux_col_prefixes,
+        add_mjds=add_mjds,
+    )
+    futures = client.map(process_fn, pixels, visit_map=visit_map_handle)
+    skipped = 0
     for future in tqdm(as_completed(futures), desc=catalog_name, total=len(futures)):
         if future.status == "error":
             raise future.exception()
+        if not future.result():
+            skipped += 1
+    if skipped:
+        logger.info("%s: skipped %d already-processed partition(s)", catalog_name, skipped)
     _rewrite_catalog_metadata(catalog, hats_dir)
 
 
@@ -98,18 +114,33 @@ def _process_partition(
     flux_col_prefixes: list[str],
     add_mjds: bool,
     visit_map: dict,
-) -> None:
+) -> bool:
+    """Process one partition. Returns False if already processed and skipped."""
     file_path = hats.io.pixel_catalog_file(catalog_dir, target_pixel)
+    if _is_already_processed(file_path.path, flux_col_prefixes, add_mjds):
+        return False
     table = pd.read_parquet(file_path, dtype_backend="pyarrow")
     if flux_col_prefixes:
         table = _append_mag_and_magerr(table, flux_col_prefixes)
     if add_mjds:
         table = _add_mjd_from_visit(table, visit_map)
     table = _cast_columns_float32(table)
-    pq.write_table(
-        pa.Table.from_pandas(table, preserve_index=False).replace_schema_metadata(),
-        file_path.path,
-    )
+    arrow_table = pa.Table.from_pandas(table, preserve_index=False).replace_schema_metadata()
+    del table
+    pq.write_table(arrow_table, file_path.path)
+    del arrow_table
+    pa.default_memory_pool().release_unused()
+    return True
+
+
+def _is_already_processed(file_path, flux_col_prefixes: list[str], add_mjds: bool) -> bool:
+    """Check partition schema (no data loaded) to see if postprocessing has already run."""
+    if not flux_col_prefixes and not add_mjds:
+        return False
+    existing = set(pq.read_schema(file_path).names)
+    if flux_col_prefixes and not all(f"{p}Mag" in existing for p in flux_col_prefixes):
+        return False
+    return not (add_mjds and "midpointMjdTai" not in existing)
 
 
 def _append_mag_and_magerr(table: pd.DataFrame, flux_col_prefixes: list[str]) -> pd.DataFrame:

@@ -17,6 +17,7 @@ _IMPORT_ARGS_MANAGED = frozenset(
         "input_file_list",
         "file_reader",
         "use_schema_file",  # handled via the top-level use_schema_file bool
+        "resume",  # handled via the top-level resume bool
     }
 )
 
@@ -31,6 +32,12 @@ class RunConfig(BaseModel):
     output_dir: Path
     run: str | None = None
     visit_table_name: str = "visit_table"
+    resume: bool = True
+
+    @property
+    def pipeline_state_dir(self) -> Path:
+        """Directory for per-stage completion markers."""
+        return self.hats_dir / ".pipeline_state"
 
     @property
     def butler_collection(self) -> str:
@@ -89,6 +96,7 @@ class CatalogConfig(BaseModel):
     add_mjds: bool = False
     use_schema_file: bool = False
     chunksize: int = 500_000  # DimensionParquetReader batch size
+    resume: bool = True
     import_args: dict[str, Any] = {}
 
     @model_validator(mode="after")
@@ -138,6 +146,7 @@ class NestedConfig(BaseModel):
     nested_column_names: list[str]  # parallel to source_catalogs
     sort_column: str = "midpointMjdTai"
     margin_radius_arcsec: int = 2
+    resume: bool = True
     pixel_threshold: int = 15_000
     highest_healpix_order: int = 11
     skymap_alt_orders: list[int] = [2, 4, 6]
