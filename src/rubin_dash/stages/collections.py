@@ -44,7 +44,14 @@ def run_collections(cfg: PipelineConfig, collection_filter: list[str] | None = N
                     resume=cfg.run.resume,
                 )
                 .catalog(catalog_path=nested_dest)
-                .add_margin(margin_threshold=collection_cfg.margin_threshold, is_default=True)
-                .add_index(indexing_column=collection_cfg.index_column)
+                .add_margin(
+                    margin_threshold=collection_cfg.margin_threshold,
+                    is_default=True,
+                    **collection_cfg.margin_import_args,
+                )
+                .add_index(
+                    indexing_column=collection_cfg.index_column,
+                    **collection_cfg.index_import_args,
+                )
             )
             pipeline_with_client(args, client)

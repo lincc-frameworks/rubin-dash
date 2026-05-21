@@ -21,6 +21,25 @@ _IMPORT_ARGS_MANAGED = frozenset(
     }
 )
 
+# CollectionArguments.add_margin fields managed by CollectionConfig — not allowed in margin_import_args
+_MARGIN_IMPORT_ARGS_MANAGED = frozenset({"margin_threshold", "is_default"})
+
+# CollectionArguments.add_index fields managed by CollectionConfig — not allowed in index_import_args
+_INDEX_IMPORT_ARGS_MANAGED = frozenset({"indexing_column"})
+
+# reimport_from_hats fields managed by NestedConfig — not allowed in reimport_args config
+_REIMPORT_ARGS_MANAGED = frozenset(
+    {
+        "output_dir",
+        "highest_healpix_order",
+        "pixel_threshold",
+        "skymap_alt_orders",
+        "row_group_kwargs",
+        "resume",
+        "addl_hats_properties",
+    }
+)
+
 
 class RunConfig(BaseModel):
     """Run-specific fields: instrument, repo, version, collection, and output location."""
@@ -152,6 +171,17 @@ class NestedConfig(BaseModel):
     skymap_alt_orders: list[int] = [2, 4, 6]
     row_group_kwargs: dict[str, Any] = {"subtile_order_delta": 1}
     default_columns: list[str] = []  # hats_cols_default; empty = all columns
+    reimport_args: dict[str, Any] = {}
+
+    @model_validator(mode="after")
+    def _validate_reimport_args(self) -> NestedConfig:
+        managed = set(self.reimport_args.keys()) & _REIMPORT_ARGS_MANAGED
+        if managed:
+            raise ValueError(
+                f"These fields are managed automatically and cannot be set in reimport_args: "
+                f"{', '.join(sorted(managed))}"
+            )
+        return self
 
 
 class CollectionConfig(BaseModel):
@@ -160,6 +190,24 @@ class CollectionConfig(BaseModel):
     nested_catalog: str
     margin_threshold: float = 5.0
     index_column: str
+    margin_import_args: dict[str, Any] = {}
+    index_import_args: dict[str, Any] = {}
+
+    @model_validator(mode="after")
+    def _validate_collection_args(self) -> CollectionConfig:
+        managed_margin = set(self.margin_import_args.keys()) & _MARGIN_IMPORT_ARGS_MANAGED
+        if managed_margin:
+            raise ValueError(
+                f"These fields are managed automatically and cannot be set in margin_import_args: "
+                f"{', '.join(sorted(managed_margin))}"
+            )
+        managed_index = set(self.index_import_args.keys()) & _INDEX_IMPORT_ARGS_MANAGED
+        if managed_index:
+            raise ValueError(
+                f"These fields are managed automatically and cannot be set in index_import_args: "
+                f"{', '.join(sorted(managed_index))}"
+            )
+        return self
 
 
 class NestedConfigs(BaseModel):

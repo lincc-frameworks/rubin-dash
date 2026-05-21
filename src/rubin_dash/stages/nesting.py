@@ -119,6 +119,7 @@ def _build_nested_catalog(
         row_group_kwargs=nested_cfg.row_group_kwargs,
         resume=nested_cfg.resume,
         **({"addl_hats_properties": addl_props} if addl_props else {}),
+        **nested_cfg.reimport_args,
     )
     pipeline_with_client(reimport_args, client)
     shutil.rmtree(intermediate_path)
