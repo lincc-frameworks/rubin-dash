@@ -6,6 +6,7 @@ import time
 
 import typer
 
+from rubin_dash import __version__
 from rubin_dash.config import PipelineConfig
 from rubin_dash.stages.butler import run_butler
 from rubin_dash.stages.collections import run_collections
@@ -228,6 +229,7 @@ def run_pipeline(
     active_collections = list(cfg.enabled_collections(collection_filter).keys())
 
     logger.info("----- DASH Import Pipeline -----")
+    logger.info("rubin-dash version  : %s", __version__)
     logger.info("Version    : %s", cfg.run.version)
     logger.info("Full Collection: %s", cfg.run.butler_collection)
     logger.info("Stages     : %s", ", ".join(stages_to_run))
