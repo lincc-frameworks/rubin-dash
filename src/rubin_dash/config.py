@@ -76,6 +76,11 @@ class RunConfig(BaseModel):
         return self.output_dir / "hats" / self.version
 
     @property
+    def public_files_dir(self) -> Path:
+        """Directory for public parquet files exported from Butler."""
+        return self.hats_dir / "public-files"
+
+    @property
     def validation_dir(self) -> Path:
         """Directory for validation outputs."""
         return self.output_dir / "validation" / self.version
@@ -93,6 +98,7 @@ class StagesConfig(BaseModel):
         "collections",
         "crossmatch",
         "generate_json",
+        "public_files",
     ]
 
 
@@ -264,6 +270,12 @@ class CollectionsConfig(BaseModel):
         return result
 
 
+class PublicFilesConfig(BaseModel):
+    """Configuration for the public_files stage."""
+
+    datasets: list[str] = []
+
+
 class CrossmatchSurveyConfig(BaseModel):
     """Configuration for a single external survey used in crossmatching."""
 
@@ -325,6 +337,7 @@ class PipelineConfig(BaseModel):
     nested: NestedConfigs = NestedConfigs()
     collections: CollectionsConfig = CollectionsConfig()
     crossmatch: CrossmatchConfig = CrossmatchConfig()
+    public_files: PublicFilesConfig = PublicFilesConfig()
     dask: DaskConfig = DaskConfig()
 
     def enabled_catalogs(self, filter: list[str] | None = None) -> dict[str, CatalogConfig]:

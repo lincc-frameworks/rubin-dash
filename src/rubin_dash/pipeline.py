@@ -15,6 +15,7 @@ from rubin_dash.stages.generate_json import run_generate_json
 from rubin_dash.stages.import_catalogs import run_import
 from rubin_dash.stages.nesting import run_nesting
 from rubin_dash.stages.postprocess import run_postprocess
+from rubin_dash.stages.public_files import run_public_files
 from rubin_dash.stages.raw_sizes import run_raw_sizes
 
 logger = logging.getLogger(__name__)
@@ -28,10 +29,11 @@ STAGE_ORDER = [
     "collections",
     "crossmatch",
     "generate_json",
+    "public_files",
 ]
 
 # Stages that require the LSST stack to be active
-LSST_STAGES = {"butler", "raw_sizes", "import"}
+LSST_STAGES = {"butler", "raw_sizes", "import", "public_files"}
 
 
 def check_lsst() -> None:
@@ -201,6 +203,8 @@ def run_stage(
         run_crossmatch(cfg, collection_filter)
     elif stage == "generate_json":
         run_generate_json(cfg, collection_filter)
+    elif stage == "public_files":
+        run_public_files(cfg)
 
 
 def run_pipeline(
