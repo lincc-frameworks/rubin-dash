@@ -128,6 +128,10 @@ def _process_partition(
     arrow_table = pa.Table.from_pandas(table, preserve_index=False).replace_schema_metadata()
     del table
     pq.write_table(arrow_table, file_path.path)
+    # Explicitly delete the Arrow table and release memory to avoid accumulating memory usage on workers.
+    # This was part of debuging a memory leak where workers would run out of memory after processing many
+    # partitions, even though individual partitions were small.
+    # I'm not sure this contributed to fixing the leak, but it currently works and it can't hurt to keep it.
     del arrow_table
     pa.default_memory_pool().release_unused()
     return True
