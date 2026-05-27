@@ -47,23 +47,30 @@ class RunConfig(BaseModel):
     instrument: str
     repo: str
     version: str
-    collection: str
     output_dir: Path
     run: str | None = None
+    collection: str | None = None
+    butler_collection: str | None = None
     visit_table_name: str = "visit_table"
     resume: bool = True
+
+    @model_validator(mode="after")
+    def _fill_butler_collection(self) -> RunConfig:
+        """Construct butler_collection from component parts if not set explicitly."""
+        if self.butler_collection is None:
+            parts = [self.instrument, "runs", "DRP"]
+            if self.run:
+                parts.append(self.run)
+            parts.append(self.version)
+            if self.collection:
+                parts.append(self.collection)
+            self.butler_collection = "/".join(parts)
+        return self
 
     @property
     def pipeline_state_dir(self) -> Path:
         """Directory for per-stage completion markers."""
         return self.hats_dir / ".pipeline_state"
-
-    @property
-    def butler_collection(self) -> str:
-        """Full Butler collection string derived from instrument, run, version, and collection."""
-        if self.run:
-            return f"{self.instrument}/runs/DRP/{self.run}/{self.version}/{self.collection}"
-        return f"{self.instrument}/runs/DRP/{self.version}/{self.collection}"
 
     @property
     def raw_dir(self) -> Path:

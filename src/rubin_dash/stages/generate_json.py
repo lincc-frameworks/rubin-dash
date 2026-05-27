@@ -37,21 +37,24 @@ def _generate_collection_json(collection_name: str, hats_dir, run_cfg) -> dict:
     collection_tag = run_cfg.collection
 
     name = f"{run} {version} {collection_name}" if run else f"{version} {collection_name}"
-    description = (
-        f"DRP/{run}/{version}/{collection_tag} {collection_name}"
-        if run
-        else f"DRP/{version}/{collection_tag} {collection_name}"
-    )
+    drp_parts = ["DRP"]
+    if run:
+        drp_parts.append(run)
+    drp_parts.append(version)
+    if collection_tag:
+        drp_parts.append(collection_tag)
+    description = f"{'/'.join(drp_parts)} {collection_name}"
+
+    other_urls = [{"label": "Column descriptions", "url": "https://sdm-schemas.lsst.io/imsim.html"}]
+    if collection_tag:
+        other_urls.append({"label": "Jira Ticket", "url": f"https://rubinobs.atlassian.net/browse/{collection_tag}"})
 
     return {
         "label": f"{version}/{collection_name}",
         "name": name,
         "description": description,
         "urls": {"catalog": str(collection_path)},
-        "other_urls": [
-            {"label": "Column descriptions", "url": "https://sdm-schemas.lsst.io/imsim.html"},
-            {"label": "Jira Ticket", "url": f"https://rubinobs.atlassian.net/browse/{collection_tag}"},
-        ],
+        "other_urls": other_urls,
         "metadata": {
             "numRows": len(catalog),
             "numColumns": len(catalog.all_columns),
