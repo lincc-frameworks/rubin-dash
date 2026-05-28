@@ -47,23 +47,30 @@ class RunConfig(BaseModel):
     instrument: str
     repo: str
     version: str
-    collection: str
     output_dir: Path
     run: str | None = None
+    collection: str | None = None
+    butler_collection: str | None = None
     visit_table_name: str = "visit_table"
     resume: bool = True
+
+    @model_validator(mode="after")
+    def _fill_butler_collection(self) -> RunConfig:
+        """Construct butler_collection from component parts if not set explicitly."""
+        if self.butler_collection is None:
+            parts = [self.instrument, "runs", "DRP"]
+            if self.run:
+                parts.append(self.run)
+            parts.append(self.version)
+            if self.collection:
+                parts.append(self.collection)
+            self.butler_collection = "/".join(parts)
+        return self
 
     @property
     def pipeline_state_dir(self) -> Path:
         """Directory for per-stage completion markers."""
         return self.hats_dir / ".pipeline_state"
-
-    @property
-    def butler_collection(self) -> str:
-        """Full Butler collection string derived from instrument, run, version, and collection."""
-        if self.run:
-            return f"{self.instrument}/runs/DRP/{self.run}/{self.version}/{self.collection}"
-        return f"{self.instrument}/runs/DRP/{self.version}/{self.collection}"
 
     @property
     def raw_dir(self) -> Path:
@@ -74,6 +81,11 @@ class RunConfig(BaseModel):
     def hats_dir(self) -> Path:
         """Directory for output HATS catalogs."""
         return self.output_dir / "hats" / self.version
+
+    @property
+    def public_files_dir(self) -> Path:
+        """Directory for public parquet files exported from Butler."""
+        return self.hats_dir / "public-files"
 
     @property
     def validation_dir(self) -> Path:
@@ -93,6 +105,7 @@ class StagesConfig(BaseModel):
         "collections",
         "crossmatch",
         "generate_json",
+        "public_files",
     ]
 
 
@@ -264,6 +277,26 @@ class CollectionsConfig(BaseModel):
         return result
 
 
+class PublicFileDataset(BaseModel):
+    """A single dataset to export in the public_files stage."""
+
+    type: str
+    name: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_string(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return {"type": value, "name": f"{value}.parquet"}
+        return value
+
+
+class PublicFilesConfig(BaseModel):
+    """Configuration for the public_files stage."""
+
+    datasets: list[PublicFileDataset] = []
+
+
 class CrossmatchSurveyConfig(BaseModel):
     """Configuration for a single external survey used in crossmatching."""
 
@@ -325,6 +358,7 @@ class PipelineConfig(BaseModel):
     nested: NestedConfigs = NestedConfigs()
     collections: CollectionsConfig = CollectionsConfig()
     crossmatch: CrossmatchConfig = CrossmatchConfig()
+    public_files: PublicFilesConfig = PublicFilesConfig()
     dask: DaskConfig = DaskConfig()
 
     def enabled_catalogs(self, filter: list[str] | None = None) -> dict[str, CatalogConfig]:

@@ -32,6 +32,7 @@ enabled = [
     "nesting",
     "collections",
     "generate_json",
+    "public_files",
 ]
 
 # ---------------------------------------------------------------------------
@@ -337,6 +338,13 @@ index_column     = "diaObjectId"
 nested_catalog   = "object_lc"
 margin_threshold = 5.0
 index_column     = "objectId"
+
+# ---------------------------------------------------------------------------
+# Public files
+# ---------------------------------------------------------------------------
+
+[public_files]
+datasets = [{"type"= "visit_detector_table", "name"= "ccd_visit.parquet"}]
 
 # ---------------------------------------------------------------------------
 # Crossmatch surveys
