@@ -277,10 +277,24 @@ class CollectionsConfig(BaseModel):
         return result
 
 
+class PublicFileDataset(BaseModel):
+    """A single dataset to export in the public_files stage."""
+
+    type: str
+    name: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_string(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return {"type": value, "name": f"{value}.parquet"}
+        return value
+
+
 class PublicFilesConfig(BaseModel):
     """Configuration for the public_files stage."""
 
-    datasets: list[str] = []
+    datasets: list[PublicFileDataset] = []
 
 
 class CrossmatchSurveyConfig(BaseModel):

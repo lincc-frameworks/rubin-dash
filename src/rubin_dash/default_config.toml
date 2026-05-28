@@ -344,7 +344,7 @@ index_column     = "objectId"
 # ---------------------------------------------------------------------------
 
 [public_files]
-datasets = ["visit_detector_table"]
+datasets = [{"type"= "visit_detector_table", "name"= "ccd_visit.parquet"}]
 
 # ---------------------------------------------------------------------------
 # Crossmatch surveys
