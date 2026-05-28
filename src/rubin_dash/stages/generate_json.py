@@ -47,7 +47,9 @@ def _generate_collection_json(collection_name: str, hats_dir, run_cfg) -> dict:
 
     other_urls = [{"label": "Column descriptions", "url": "https://sdm-schemas.lsst.io/imsim.html"}]
     if collection_tag:
-        other_urls.append({"label": "Jira Ticket", "url": f"https://rubinobs.atlassian.net/browse/{collection_tag}"})
+        other_urls.append(
+            {"label": "Jira Ticket", "url": f"https://rubinobs.atlassian.net/browse/{collection_tag}"}
+        )
 
     return {
         "label": f"{version}/{collection_name}",
