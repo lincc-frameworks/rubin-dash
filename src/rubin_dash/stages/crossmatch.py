@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import logging
+
 import lsdb
+from hats.io.validation import is_valid_catalog
 from upath import UPath
 
 from rubin_dash.config import CrossmatchSurveyConfig, PipelineConfig
 from rubin_dash.utils.dask_client import dask_client
+
+logger = logging.getLogger(__name__)
 
 STAGE = "crossmatch"
 
@@ -26,6 +31,7 @@ def run_crossmatch(cfg: PipelineConfig, collection_filter: list[str] | None = No
             for collection in collections:
                 collection_props = collection.hc_collection.collection_properties
                 collection_name = collection_props.name
+                logger.info("Starting crossmatch for %s x %s...", collection_name, survey_name)
                 lsst_id_col = next(iter(collection_props.all_indexes))
 
                 xmatch = collection.crossmatch(
@@ -36,6 +42,11 @@ def run_crossmatch(cfg: PipelineConfig, collection_filter: list[str] | None = No
                 )
 
                 xmatch_name = f"{collection.hc_structure.catalog_name}_x_{survey_name}"
+                xmatch_path = hats_dir / collection_name / xmatch_name
+                if cfg.run.resume and is_valid_catalog(xmatch_path):
+                    logger.info("Skipping '%s' — already exists.", xmatch_name)
+                    continue
+
                 join_col = f"{survey_cfg.join_id_column}{survey_cfg.suffix}"
 
                 to_association(
@@ -49,7 +60,7 @@ def run_crossmatch(cfg: PipelineConfig, collection_filter: list[str] | None = No
                     join_column_association=join_col,
                     join_id_column=survey_cfg.join_id_column,
                 )
-                print(f"Saved {xmatch_name}")
+                logger.info("Saved %s", xmatch_name)
 
 
 def _open_survey(survey_cfg: CrossmatchSurveyConfig):

@@ -17,6 +17,26 @@ _IMPORT_ARGS_MANAGED = frozenset(
         "input_file_list",
         "file_reader",
         "use_schema_file",  # handled via the top-level use_schema_file bool
+        "resume",  # handled via the top-level resume bool
+    }
+)
+
+# CollectionArguments.add_margin fields managed by CollectionConfig — not allowed in margin_import_args
+_MARGIN_IMPORT_ARGS_MANAGED = frozenset({"margin_threshold", "is_default"})
+
+# CollectionArguments.add_index fields managed by CollectionConfig — not allowed in index_import_args
+_INDEX_IMPORT_ARGS_MANAGED = frozenset({"indexing_column"})
+
+# reimport_from_hats fields managed by NestedConfig — not allowed in reimport_args config
+_REIMPORT_ARGS_MANAGED = frozenset(
+    {
+        "output_dir",
+        "highest_healpix_order",
+        "pixel_threshold",
+        "skymap_alt_orders",
+        "row_group_kwargs",
+        "resume",
+        "addl_hats_properties",
     }
 )
 
@@ -31,6 +51,12 @@ class RunConfig(BaseModel):
     output_dir: Path
     run: str | None = None
     visit_table_name: str = "visit_table"
+    resume: bool = True
+
+    @property
+    def pipeline_state_dir(self) -> Path:
+        """Directory for per-stage completion markers."""
+        return self.hats_dir / ".pipeline_state"
 
     @property
     def butler_collection(self) -> str:
@@ -89,6 +115,7 @@ class CatalogConfig(BaseModel):
     add_mjds: bool = False
     use_schema_file: bool = False
     chunksize: int = 500_000  # DimensionParquetReader batch size
+    resume: bool = True
     import_args: dict[str, Any] = {}
 
     @model_validator(mode="after")
@@ -138,11 +165,23 @@ class NestedConfig(BaseModel):
     nested_column_names: list[str]  # parallel to source_catalogs
     sort_column: str = "midpointMjdTai"
     margin_radius_arcsec: int = 2
+    resume: bool = True
     pixel_threshold: int = 15_000
     highest_healpix_order: int = 11
     skymap_alt_orders: list[int] = [2, 4, 6]
     row_group_kwargs: dict[str, Any] = {"subtile_order_delta": 1}
     default_columns: list[str] = []  # hats_cols_default; empty = all columns
+    reimport_args: dict[str, Any] = {}
+
+    @model_validator(mode="after")
+    def _validate_reimport_args(self) -> NestedConfig:
+        managed = set(self.reimport_args.keys()) & _REIMPORT_ARGS_MANAGED
+        if managed:
+            raise ValueError(
+                f"These fields are managed automatically and cannot be set in reimport_args: "
+                f"{', '.join(sorted(managed))}"
+            )
+        return self
 
 
 class CollectionConfig(BaseModel):
@@ -151,6 +190,24 @@ class CollectionConfig(BaseModel):
     nested_catalog: str
     margin_threshold: float = 5.0
     index_column: str
+    margin_import_args: dict[str, Any] = {}
+    index_import_args: dict[str, Any] = {}
+
+    @model_validator(mode="after")
+    def _validate_collection_args(self) -> CollectionConfig:
+        managed_margin = set(self.margin_import_args.keys()) & _MARGIN_IMPORT_ARGS_MANAGED
+        if managed_margin:
+            raise ValueError(
+                f"These fields are managed automatically and cannot be set in margin_import_args: "
+                f"{', '.join(sorted(managed_margin))}"
+            )
+        managed_index = set(self.index_import_args.keys()) & _INDEX_IMPORT_ARGS_MANAGED
+        if managed_index:
+            raise ValueError(
+                f"These fields are managed automatically and cannot be set in index_import_args: "
+                f"{', '.join(sorted(managed_index))}"
+            )
+        return self
 
 
 class NestedConfigs(BaseModel):

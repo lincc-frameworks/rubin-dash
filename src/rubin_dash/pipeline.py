@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
+import shutil
 import time
 
 import typer
 
+from rubin_dash import __version__
 from rubin_dash.config import PipelineConfig
 from rubin_dash.stages.butler import run_butler
 from rubin_dash.stages.collections import run_collections
@@ -13,6 +16,8 @@ from rubin_dash.stages.import_catalogs import run_import
 from rubin_dash.stages.nesting import run_nesting
 from rubin_dash.stages.postprocess import run_postprocess
 from rubin_dash.stages.raw_sizes import run_raw_sizes
+
+logger = logging.getLogger(__name__)
 
 STAGE_ORDER = [
     "butler",
@@ -34,11 +39,10 @@ def check_lsst() -> None:
     try:
         import lsst.resources  # noqa: F401
     except ImportError:
-        typer.echo(
-            "Error: LSST stack is not available.\n"
+        logger.error(
+            "LSST stack is not available.\n"
             "Please activate it before running:\n"
-            "  source /sdf/group/rubin/sw/loadLSST.sh && setup lsst_distrib",
-            err=True,
+            "  source /sdf/group/rubin/sw/loadLSST.sh && setup lsst_distrib"
         )
         raise typer.Exit(1) from None
 
@@ -50,16 +54,14 @@ def resolve_stages(
 ) -> list[str]:
     """Return the ordered list of stages to run, validated against STAGE_ORDER."""
     if stages_opt and from_stage_opt:
-        typer.echo("Error: --stages and --from-stage are mutually exclusive.", err=True)
+        logger.error("--stages and --from-stage are mutually exclusive.")
         raise typer.Exit(1)
 
     if stages_opt:
         requested = [s.strip() for s in stages_opt.split(",")]
     elif from_stage_opt:
         if from_stage_opt not in STAGE_ORDER:
-            typer.echo(
-                f"Error: unknown stage '{from_stage_opt}'. Valid stages: {', '.join(STAGE_ORDER)}", err=True
-            )
+            logger.error("Unknown stage '%s'. Valid stages: %s", from_stage_opt, ", ".join(STAGE_ORDER))
             raise typer.Exit(1)
         start = STAGE_ORDER.index(from_stage_opt)
         requested = [s for s in STAGE_ORDER[start:] if s in cfg.stages.enabled]
@@ -68,9 +70,8 @@ def resolve_stages(
 
     invalid = set(requested) - set(STAGE_ORDER)
     if invalid:
-        typer.echo(
-            f"Error: unknown stage(s): {', '.join(sorted(invalid))}. Valid stages: {', '.join(STAGE_ORDER)}",
-            err=True,
+        logger.error(
+            "Unknown stage(s): %s. Valid stages: %s", ", ".join(sorted(invalid)), ", ".join(STAGE_ORDER)
         )
         raise typer.Exit(1)
 
@@ -129,9 +130,9 @@ def preflight_checks(
                 )
 
     if errors:
-        typer.echo("Preflight checks failed:", err=True)
+        logger.error("Preflight checks failed:")
         for error in errors:
-            typer.echo(f"  - {error}", err=True)
+            logger.error("  - %s", error)
         raise typer.Exit(1)
 
 
@@ -152,10 +153,10 @@ def constrain_to_catalogs(
         required = set([nested_cfg.object_catalog] + nested_cfg.source_catalogs)
         missing = required - catalog_set
         if missing:
-            typer.echo(
-                f"Warning: skipping nesting '{name}' — required catalog(s) not active: "
-                f"{', '.join(sorted(missing))}",
-                err=True,
+            logger.warning(
+                "Skipping nesting '%s' — required catalog(s) not active: %s",
+                name,
+                ", ".join(sorted(missing)),
             )
         else:
             feasible_nestings.append(name)
@@ -165,9 +166,10 @@ def constrain_to_catalogs(
     for name, coll_cfg in cfg.enabled_collections(None).items():
         nested_name = coll_cfg.nested_catalog
         if nested_name not in feasible_nesting_set:
-            typer.echo(
-                f"Warning: skipping collection '{name}' — nested catalog '{nested_name}' is not being built",
-                err=True,
+            logger.warning(
+                "Skipping collection '%s' — nested catalog '%s' is not being built",
+                name,
+                nested_name,
             )
         else:
             feasible_collections.append(name)
@@ -226,28 +228,39 @@ def run_pipeline(
     active_nestings = list(cfg.enabled_nestings(nesting_filter).keys())
     active_collections = list(cfg.enabled_collections(collection_filter).keys())
 
-    typer.echo("----- DASH Import Pipeline -----")
-    typer.echo(f"Version    : {cfg.run.version}")
-    typer.echo(f"Full Collection: {cfg.run.butler_collection}")
-    typer.echo(f"Stages     : {', '.join(stages_to_run)}")
-    typer.echo(f"Catalogs   : {', '.join(active_catalogs)}")
-    typer.echo(f"Nestings   : {', '.join(active_nestings)}")
-    typer.echo(f"Collections: {', '.join(active_collections)}")
-    typer.echo("")
+    logger.info("----- DASH Import Pipeline -----")
+    logger.info("rubin-dash version  : %s", __version__)
+    logger.info("Version    : %s", cfg.run.version)
+    logger.info("Full Collection: %s", cfg.run.butler_collection)
+    logger.info("Stages     : %s", ", ".join(stages_to_run))
+    logger.info("Catalogs   : %s", ", ".join(active_catalogs))
+    logger.info("Nestings   : %s", ", ".join(active_nestings))
+    logger.info("Collections: %s", ", ".join(active_collections))
+    logger.info("")
 
     preflight_checks(stages_to_run, cfg, nesting_filter, collection_filter)
 
+    cfg.run.pipeline_state_dir.mkdir(parents=True, exist_ok=True)
+
     total_start = time.perf_counter()
     for stage in stages_to_run:
+        marker = cfg.run.pipeline_state_dir / f"{stage}.done"
+        if cfg.run.resume and marker.exists():
+            logger.info("[%s] already complete — skipping. (delete %s to re-run)", stage, marker)
+            continue
         stage_start = time.perf_counter()
-        typer.echo(f"[{stage}] starting...")
+        logger.info("[%s] starting...", stage)
         run_stage(stage, cfg, catalog_filter, nesting_filter, collection_filter)
+        marker.touch()
         elapsed = time.perf_counter() - stage_start
         h, rem = divmod(int(elapsed), 3600)
         m, s = divmod(rem, 60)
-        typer.echo(f"[{stage}] done in {h:02d}:{m:02d}:{s:02d}\n")
+        logger.info("[%s] done in %02d:%02d:%02d\n", stage, h, m, s)
+
+    if cfg.run.pipeline_state_dir.exists():
+        shutil.rmtree(cfg.run.pipeline_state_dir)
 
     total = time.perf_counter() - total_start
     h, rem = divmod(int(total), 3600)
     m, s = divmod(rem, 60)
-    typer.echo(f"Pipeline complete. Total time: {h:02d}:{m:02d}:{s:02d}")
+    logger.info("Pipeline complete. Total time: %02d:%02d:%02d", h, m, s)
