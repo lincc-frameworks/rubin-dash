@@ -159,7 +159,7 @@ def _append_mag_and_magerr(table: pd.DataFrame, flux_col_prefixes: list[str]) ->
             lower = u.nJy.to(u.ABmag, flux - flux_err)
             mag_cols[f"{prefix}MagErr"] = -(upper - lower) / 2
     mag_frame = pd.DataFrame(mag_cols, dtype=pd.ArrowDtype(pa.float32()), index=table.index)
-    return pd.concat([table, mag_frame], axis=1)
+    return table.assign(**{col: mag_frame[col] for col in mag_frame.columns})
 
 
 def _add_mjd_from_visit(table: pd.DataFrame, visit_map: dict) -> pd.DataFrame:
