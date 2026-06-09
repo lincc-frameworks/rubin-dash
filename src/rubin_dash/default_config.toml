@@ -101,12 +101,12 @@ simple_progress_bar = true
 dims             = ["tract"]
 group_by         = ["tract"]
 flux_columns     = [
-    "u_psf", "u_kron",
-    "g_psf", "g_kron",
-    "r_psf", "r_kron",
-    "i_psf", "i_kron",
-    "z_psf", "z_kron",
-    "y_psf", "y_kron",
+    "u_psf", "u_kron", "u_cModel",
+    "g_psf", "g_kron", "g_cModel",
+    "r_psf", "r_kron", "r_cModel",
+    "i_psf", "i_kron", "i_cModel",
+    "z_psf", "z_kron", "z_cModel",
+    "y_psf", "y_kron", "y_cModel",
 ]
 add_mjds         = false
 use_schema_file  = true
