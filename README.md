@@ -50,7 +50,7 @@ From an interactive node, request a reserved node:
 
 ```shell
 srun --pty --exclusive --nodes=1 --time=48:00:00 \
-     --partition=milano --account=rubin:commissioning bash
+     --partition=torino --account=rubin:commissioning bash
 ```
 
 Do not exit the reserved node shell directly — use `tmux detach` or screen's `ctrl+a -> d` instead so the
@@ -66,7 +66,7 @@ setup lsst_distrib
 ### Install rubin-dash
 
 ```shell
-pip install rubin-dash
+pip install git+https://github.com/lincc-frameworks/rubin-dash.git
 ```
 
 ## Running the pipeline
