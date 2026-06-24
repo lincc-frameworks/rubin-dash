@@ -7,10 +7,39 @@ from typing import Any
 
 import dask
 from dask.distributed import Client
+from distributed.diagnostics.plugin import WorkerPlugin
+
+logger = logging.getLogger(__name__)
 
 # Distributed's own log format, reused so the nanny death-message handler matches
 # the rest of distributed's output.
 _DISTRIBUTED_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+
+class _FaulthandlerToFile(WorkerPlugin):
+    """Point each worker's faulthandler at a file on disk.
+
+    The ``PYTHONFAULTHANDLER`` env var dumps segfault tracebacks to the worker's raw
+    stderr (fd 2), which is easily lost on a batch system where stderr is swallowed or
+    routed separately from the captured logs. This writes the crash stack to a file in
+    the worker's local directory instead, so it survives regardless of stderr plumbing.
+    Registered via ``Client.register_plugin`` so it also applies to nanny-restarted
+    workers. The file handle is parked on the worker so it isn't garbage-collected.
+    """
+
+    name = "rubin-dash-faulthandler"
+
+    def setup(self, worker):
+        import faulthandler
+        import os
+
+        fault_dir = os.path.join(worker.local_directory, "faulthandler")
+        os.makedirs(fault_dir, exist_ok=True)
+        path = os.path.join(fault_dir, f"segfault-{os.getpid()}.log")
+        # Line-buffered append; faulthandler writes via the raw fd at fault time.
+        worker._rubin_dash_fault_file = open(path, "a", buffering=1)  # noqa: SIM115
+        faulthandler.enable(file=worker._rubin_dash_fault_file, all_threads=True)
+        logger.info("faulthandler writing to %s", path)
 
 
 def _enable_worker_faulthandler() -> None:
@@ -86,6 +115,7 @@ def dask_client(client_kwargs: dict[str, Any] | None = None):
         tmp = tempfile.TemporaryDirectory()
         kwargs["local_directory"] = tmp.name
     client = Client(**kwargs)
+    client.register_plugin(_FaulthandlerToFile())
     with _nanny_deaths_visible():
         try:
             yield client
