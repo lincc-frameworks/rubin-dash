@@ -17,6 +17,27 @@ logger = logging.getLogger(__name__)
 app = typer.Typer(help="DASH Import Pipeline — convert Rubin DRP outputs to HATS catalogs.")
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        from rubin_dash import __version__
+
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        help="Print the package version and exit.",
+        callback=_version_callback,
+        is_eager=True,
+    ),
+) -> None:
+    """DASH Import Pipeline."""
+
+
 @app.command()
 def run(
     config_paths: list[Path] = typer.Option(
