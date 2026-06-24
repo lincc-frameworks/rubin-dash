@@ -17,6 +17,8 @@ only the reader (the most common crash site); pass them to also run healpy radec
 from __future__ import annotations
 
 import argparse
+import glob
+import os
 import sys
 
 import numpy as np
@@ -27,20 +29,47 @@ from rubin_dash.utils.readers import DimensionParquetReader
 HIGHEST_ORDER = 11  # mapping order hats_import uses by default
 
 
+def _expand(paths: list[str]) -> list[str]:
+    """Expand each arg that is a directory (-> its *.csv) or a glob pattern, in Python.
+
+    Done here rather than via a shell glob so large catalogs (thousands of index files)
+    don't blow past the shell's ARG_MAX ("argument list too long").
+    """
+    out: list[str] = []
+    for p in paths:
+        if os.path.isdir(p):
+            out.extend(sorted(glob.glob(os.path.join(p, "*.csv"))))
+        elif any(ch in p for ch in "*?["):
+            out.extend(sorted(glob.glob(p)))
+        else:
+            out.append(p)
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("index_files", nargs="+", help="CSV index file(s) to read")
+    parser.add_argument(
+        "index_files",
+        nargs="+",
+        help="CSV index file(s), a directory of them, or a quoted glob pattern",
+    )
     parser.add_argument("--chunksize", type=int, default=250_000)
     parser.add_argument("--ra-column", default=None, help="also run radec2pix if given")
     parser.add_argument("--dec-column", default=None)
     args = parser.parse_args()
 
+    index_files = _expand(args.index_files)
+    if not index_files:
+        parser.error(f"no CSV index files matched: {args.index_files}")
+    print(f"expanded to {len(index_files)} index file(s)", flush=True)
+
     reader = DimensionParquetReader(chunksize=args.chunksize)
     do_map = bool(args.ra_column and args.dec_column)
+    hp = None
     if do_map:
         import hats.pixel_math.healpix_shim as hp
 
-    for path in args.index_files:
+    for path in index_files:
         print(f"READING {path}", flush=True)
         for chunk_number, table in enumerate(reader.read(path, read_columns=None)):
             # mimic the splitting work that happens per chunk
