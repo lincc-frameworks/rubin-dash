@@ -42,8 +42,36 @@ class _FaulthandlerToFile(WorkerPlugin):
         os.makedirs(fault_dir, exist_ok=True)
         path = os.path.join(fault_dir, f"segfault-{os.getpid()}.log")
         # Line-buffered append; faulthandler writes via the raw fd at fault time.
-        worker._rubin_dash_fault_file = open(path, "a", buffering=1)  # noqa: SIM115
-        faulthandler.enable(file=worker._rubin_dash_fault_file, all_threads=True)
+        fault_file = open(path, "a", buffering=1)  # noqa: SIM115
+        worker._rubin_dash_fault_file = fault_file
+
+        # Try to enable core dumps (raise soft limit to the hard cap; if the hard cap is
+        # 0 — common on shared clusters — cores stay disabled and we say so). Core dumps
+        # capture the native C++ backtrace even when a third-party library has overridden
+        # faulthandler's signal handler, which is why an enabled faulthandler can still
+        # produce an empty file on crash.
+        import resource
+
+        try:
+            _, hard = resource.getrlimit(resource.RLIMIT_CORE)
+            resource.setrlimit(resource.RLIMIT_CORE, (hard, hard))
+            core_soft, core_hard = resource.getrlimit(resource.RLIMIT_CORE)
+        except (ValueError, OSError) as exc:  # pragma: no cover - platform dependent
+            core_soft = core_hard = f"error: {exc}"
+        try:
+            core_pattern = open("/proc/sys/kernel/core_pattern").read().strip()
+        except OSError:
+            core_pattern = "<unavailable>"
+
+        # A non-empty header proves setup ran and records core-dump feasibility, so an
+        # "empty" file (no header) now unambiguously means the plugin never ran.
+        fault_file.write(
+            f"[rubin-dash] faulthandler armed for pid {os.getpid()} at {path}\n"
+            f"[rubin-dash] RLIMIT_CORE soft={core_soft} hard={core_hard} "
+            f"core_pattern={core_pattern!r}\n"
+        )
+        fault_file.flush()
+        faulthandler.enable(file=fault_file, all_threads=True)
         logger.info("faulthandler writing to %s", path)
 
 
