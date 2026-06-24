@@ -33,7 +33,12 @@ class _FaulthandlerToFile(WorkerPlugin):
         import faulthandler
         import os
 
-        fault_dir = os.path.join(worker.local_directory, "faulthandler")
+        # Write to the scratch-space *root* (parent of the worker dir), NOT the worker's
+        # own local_directory: the nanny rmtree's a dead worker's local_directory in
+        # mark_stopped(), which would delete the crash dump for the very worker that
+        # faulted. The parent survives per-worker cleanup, so the dump persists.
+        scratch_root = os.path.dirname(os.path.normpath(worker.local_directory))
+        fault_dir = os.path.join(scratch_root, "faulthandler")
         os.makedirs(fault_dir, exist_ok=True)
         path = os.path.join(fault_dir, f"segfault-{os.getpid()}.log")
         # Line-buffered append; faulthandler writes via the raw fd at fault time.
