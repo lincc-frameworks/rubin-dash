@@ -10,6 +10,11 @@
 threads_per_worker = 1
 n_workers    = 16
 memory_limit = "16GB"
+# Distributed log level. Keep at "INFO" so worker death messages (e.g. the nanny's
+# "Worker process N was killed by signal M") are printed instead of a bare
+# "Restarting worker". Lower to "DEBUG" for more detail. Overrides the LocalCluster
+# silence_logs=WARN default, which otherwise hides these.
+silence_logs = "INFO"
 
 [dask.stages.nesting]
 n_workers    = 8

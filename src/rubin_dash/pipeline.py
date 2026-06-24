@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import time
 
@@ -229,6 +230,11 @@ def run_pipeline(
     collections_opt: str | None,
 ) -> None:
     """Resolve options, run preflight checks, and execute the pipeline."""
+
+    # Ensure every directory created during the run is group-writable (0775) so
+    # collaborators sharing the output tree can manage it. This applies process-wide,
+    # covering both our own mkdir calls and directories created internally by hats_import.
+    os.umask(0o002)
 
     stages_to_run = resolve_stages(cfg, stages_opt, from_stage_opt)
 

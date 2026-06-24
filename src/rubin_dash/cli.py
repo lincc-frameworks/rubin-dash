@@ -5,7 +5,6 @@ import logging
 import os
 import socket
 import subprocess
-from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -58,9 +57,12 @@ def run(
     """Run the DASH pipeline."""
     from rubin_dash.pipeline import run_pipeline
 
+    # Set before creating the log file/dir below so they are group-writable too.
+    # run_pipeline also sets this, covering non-CLI entry points.
+    os.umask(0o002)
+
     cfg = load_config(config_paths)
-    timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-    default_log_file = cfg.run.output_dir / "logs" / f"{cfg.run.version}_{timestamp}.log"
+    default_log_file = cfg.run.output_dir / "logs" / f"{cfg.run.version}.log"
     resolved_log_file = None if no_log else (log_file or default_log_file)
     setup_logging(resolved_log_file)
 
@@ -71,6 +73,12 @@ def run(
     except Exception:
         logger.exception("Pipeline failed with unhandled exception")
         raise
+    finally:
+        # Append blank lines so the next run is easy to spot in the shared log file.
+        # Written directly to the file to avoid the log formatter's timestamp/level prefix.
+        if resolved_log_file is not None and resolved_log_file.exists():
+            with resolved_log_file.open("a", encoding="utf-8") as f:
+                f.write("\n\n\n")
 
 
 @app.command()
