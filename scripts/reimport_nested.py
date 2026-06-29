@@ -49,6 +49,14 @@ def main() -> int:
         help="TOML config file(s); repeat to layer overrides (left to right).",
     )
     parser.add_argument(
+        "--source-path",
+        type=Path,
+        default=None,
+        help="Path to the catalog to reimport. Defaults to <hats_dir>/<nesting>. After the "
+        "collections stage runs, the nested catalog is moved into its collection, so pass "
+        "e.g. <hats_dir>/object_collection/object_lc (or the collection dir itself).",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
@@ -76,7 +84,7 @@ def main() -> int:
         parser.error(f"No [nested.{args.nesting}] config section found.")
 
     hats_dir = cfg.run.hats_dir
-    source_path = hats_dir / args.nesting
+    source_path = args.source_path or (hats_dir / args.nesting)
     output_dir = args.output_dir or (hats_dir / "reimport")
     output_dir.mkdir(parents=True, exist_ok=True)
 
