@@ -349,6 +349,44 @@ class DaskConfig(BaseModel):
         return {**self.global_kwargs, **self.stages.get(stage, {})}
 
 
+class UncertaintyCorrectionModelConfig(BaseModel):
+    """Configuration for a single onnx uncertainty-correction model."""
+
+    model_path: str
+    n_inputs: int
+    min_value: float
+    max_value: float
+
+
+class UncertaintyCorrectionColumnConfig(BaseModel):
+    """Configuration for correcting one nested source column with a model."""
+
+    source_column: str
+    model: str
+    input_columns: list[str]
+    output_column: str
+
+
+class UncertaintyCorrectionConfig(BaseModel):
+    """Configuration for uncertainty correction."""
+
+    models: dict[str, UncertaintyCorrectionModelConfig] = {}
+    collections: dict[str, dict[str, UncertaintyCorrectionColumnConfig]] = {}
+
+    @model_validator(mode="after")
+    def _validate_model_inputs(self) -> UncertaintyCorrectionConfig:
+        for collection_name, collection_columns in self.collections.items():
+            for column_name, column_config in collection_columns.items():
+                if len(column_config.input_columns) != self.models[column_config.model].n_inputs:
+                    raise ValueError(
+                        f"Collection '{collection_name}', column '{column_name}' "
+                        f"has {len(column_config.input_columns)} input columns, "
+                        f"but model '{column_config.model}' expects "
+                        f"{self.models[column_config.model].n_inputs} inputs."
+                    )
+        return self
+
+
 class PipelineConfig(BaseModel):
     """Top-level pipeline configuration, combining all stage and catalog settings."""
 
@@ -360,6 +398,7 @@ class PipelineConfig(BaseModel):
     crossmatch: CrossmatchConfig = CrossmatchConfig()
     public_files: PublicFilesConfig = PublicFilesConfig()
     dask: DaskConfig = DaskConfig()
+    uncertainty_correction: UncertaintyCorrectionConfig = UncertaintyCorrectionConfig()
 
     def enabled_catalogs(self, filter: list[str] | None = None) -> dict[str, CatalogConfig]:
         """Return configs for enabled catalogs, optionally filtered to a subset by name."""

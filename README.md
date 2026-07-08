@@ -16,16 +16,17 @@
 The pipeline runs a sequence of stages that read from a Butler repository and
 write HATS catalogs to an output directory:
 
-| Stage | Description                                           |
-|---|-------------------------------------------------------|
-| `butler` | Find catalog parquet files from the Butler repository |
-| `raw_sizes` | Measure raw parquet file sizes                        |
-| `import` | Import catalogs into HATS format                      |
-| `postprocess` | Post-process imported catalogs                        |
-| `nesting` | Build nested (light-curve) catalogs                   |
-| `collections` | Generate HATS collections                             |
-| `crossmatch` | Cross-match against external surveys (e.g. ZTF, PS1)  |
-| `generate_json` | Generate JSON metadata for the HATS collections       |
+| Stage | Description                                                                                               |
+|---|-----------------------------------------------------------------------------------------------------------|
+| `butler` | Find catalog parquet files from the Butler repository                                                     |
+| `raw_sizes` | Measure raw parquet file sizes                                                                            |
+| `import` | Import catalogs into HATS format                                                                          |
+| `postprocess` | Post-process imported catalogs                                                                            |
+| `nesting` | Build nested (light-curve) catalogs                                                                       |
+| `collections` | Generate HATS collections                                                                                 |
+| `crossmatch` | Cross-match against external surveys (e.g. ZTF, PS1)                                                      |
+| `generate_json` | Generate JSON metadata for the HATS collections                                                           |
+| `uncertainty_correction` | Apply [Uncle Val](https://github.com/lincc-frameworks/uncle-val) uncertainty correction to forced sources |
 
 ## Setting up the environment
 

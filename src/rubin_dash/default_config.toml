@@ -19,6 +19,10 @@ memory_limit = "32GB"
 n_workers    = 8
 memory_limit = "128GB"
 
+[dask.stages.uncertainty_correction]
+n_workers    = 2
+memory_limit = "512GB"
+
 # ---------------------------------------------------------------------------
 # Stages
 # ---------------------------------------------------------------------------
@@ -365,3 +369,116 @@ suffix          = "_ps1"
 join_id_column  = "objID"
 s3_endpoint_url = "https://s3.amazonaws.com"
 s3_anon         = true
+
+# ---------------------------------------------------------------------------
+# Uncertainty correction
+# ---------------------------------------------------------------------------
+
+[uncertainty_correction.models.science_source]
+# FIXME
+model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/refs/heads/main/models/2026-06-10_DP2_Object_ForcedSource/MLPModel.onnx"
+n_inputs = 15
+min_value = 0.02
+max_value = 50.0
+
+[uncertainty_correction.models.diff_source]
+# FIXME
+model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/refs/heads/main/models/2026-06-10_DP2_Object_ForcedSource/MLPModel.onnx"
+# TODO: update to 16
+n_inputs = 15
+min_value = 0.02
+max_value = 50.0
+
+[uncertainty_correction.collections.object_collection.forced_science_source]
+source_column = "objectForcedSource"
+model = "science_source"
+flux_err_column = "psfFluxErr"
+input_columns = [
+    "psfFlux",
+    "psfFluxErr",
+    "extendedness",
+    "skyBg",
+    "seeing",
+    "expTime",
+    "detector_rho",
+    "detector_cos_phi",
+    "detector_sin_phi",
+    "is_u_band",
+    "is_g_band",
+    "is_r_band",
+    "is_i_band",
+    "is_z_band",
+    "is_y_band",
+]
+output_column = "psfFluxErr_corrected"
+
+[uncertainty_correction.collections.object_collection.forced_diff_source]
+source_column = "objectForcedSource"
+model = "diff_source"
+flux_err_column = "psfDiffFluxErr"
+input_columns = [
+    "psfDiffFlux",
+    "psfDiffFluxErr",
+    # TODO: add "psfFlux"
+    "extendedness",
+    "skyBg",
+    "seeing",
+    "expTime",
+    "detector_rho",
+    "detector_cos_phi",
+    "detector_sin_phi",
+    "is_u_band",
+    "is_g_band",
+    "is_r_band",
+    "is_i_band",
+    "is_z_band",
+    "is_y_band",
+]
+output_column = "psfDiffFluxErr_corrected"
+
+[uncertainty_correction.collections.dia_object_collection.forced_science_source]
+source_column = "diaObjectForcedSource"
+model = "science_source"
+flux_err_column = "psfFluxErr"
+input_columns = [
+    "psfFlux",
+    "psfFluxErr",
+    "extendedness",
+    "skyBg",
+    "seeing",
+    "expTime",
+    "detector_rho",
+    "detector_cos_phi",
+    "detector_sin_phi",
+    "is_u_band",
+    "is_g_band",
+    "is_r_band",
+    "is_i_band",
+    "is_z_band",
+    "is_y_band",
+]
+output_column = "psfFluxErr_corrected"
+
+[uncertainty_correction.collections.dia_object_collection.forced_diff_source]
+source_column = "diaObjectForcedSource"
+model = "diff_source"
+flux_err_column = "psfDiffFluxErr"
+input_columns = [
+    "psfDiffFlux",
+    "psfDiffFluxErr",
+    # TODO: add "psfFlux"
+    "extendedness",
+    "skyBg",
+    "seeing",
+    "expTime",
+    "detector_rho",
+    "detector_cos_phi",
+    "detector_sin_phi",
+    "is_u_band",
+    "is_g_band",
+    "is_r_band",
+    "is_i_band",
+    "is_z_band",
+    "is_y_band",
+]
+output_column = "psfDiffFluxErr_corrected"

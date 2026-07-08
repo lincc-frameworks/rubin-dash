@@ -17,6 +17,7 @@ from rubin_dash.stages.nesting import run_nesting
 from rubin_dash.stages.postprocess import run_postprocess
 from rubin_dash.stages.public_files import run_public_files
 from rubin_dash.stages.raw_sizes import run_raw_sizes
+from rubin_dash.stages.uncertainty_correction import run_uncertainty_correction
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +31,11 @@ STAGE_ORDER = [
     "crossmatch",
     "generate_json",
     "public_files",
+    "uncertainty_correction",
 ]
 
 # Stages that require the LSST stack to be active
-LSST_STAGES = {"butler", "raw_sizes", "import", "public_files"}
+LSST_STAGES = {"butler", "raw_sizes", "import", "public_files", "uncertainty_correction"}
 
 
 def check_lsst() -> None:
@@ -100,7 +102,7 @@ def preflight_checks(
                 if cat_name not in cfg.catalogs.enabled and not (hats_dir / cat_name).exists():
                     errors.append(
                         f"nesting '{nested_name}' needs catalog '{cat_name}' but it is not "
-                        f"in catalogs.enabled and {hats_dir / cat_name} does not exist."
+                        f"in collections.enabled and {hats_dir / cat_name} does not exist."
                     )
 
     if "collections" in stages_to_run:
@@ -129,6 +131,15 @@ def preflight_checks(
                 errors.append(
                     f"generate_json needs collection '{collection_name}' but collections stage "
                     f"is not running and {hats_dir / collection_name} does not exist."
+                )
+
+    if "uncertainty_correction" in stages_to_run:
+        for collection_name in cfg.uncertainty_correction.collections:
+            produced = "collections" in stages_to_run and collection_name in active_collections
+            if not produced and not (hats_dir / collection_name).exists():
+                errors.append(
+                    f"uncertainty_correction needs collection '{collection_name}' but collections "
+                    f"stage is not running and {hats_dir / collection_name} does not exist."
                 )
 
     if errors:
@@ -205,6 +216,8 @@ def run_stage(
         run_generate_json(cfg, collection_filter)
     elif stage == "public_files":
         run_public_files(cfg)
+    elif stage == "uncertainty_correction":
+        run_uncertainty_correction(cfg, collection_filter)
 
 
 def run_pipeline(
