@@ -206,7 +206,12 @@ def _add_corrected_error_columns(
 
     match collection_name:
         case "object_collection":
-            input_frame["extendedness"] = sum(input_frame[f"{band}_extendedness"] * input_frame[f"is_{band}_band"] for band in LSST_BANDS)
+            # Set object {band}_extendedness based on the source observational band.
+            # We set extendedness to zero if no value is available.
+            extendedness = np.zeros(len(input_frame), dtype=np.float32)
+            for band in LSST_BANDS:
+                extendedness += input_frame[f"{band}_extendedness"].fillna(np.float32(0.0)) * input_frame[f"is_{band}_band"]
+            input_frame["extendedness"] = extendedness
             input_frame.drop(columns=extendedness_columns)
         case "dia_object_collection":
             # DiaObject table doesn't provide it, so we make a conservative choice and
@@ -227,7 +232,7 @@ def _add_corrected_error_columns(
         uu = np.clip(uu, model_cfg.min_value, model_cfg.max_value)
 
         nf[f"{source_column}.{col_cfg.output_column}"] = uu * nf[f"{source_column}.psfFlux"]
-        nf[f"{source_column}.{col_cfg.output_column}_flag"] = flag
+        nf[f"{source_column}.{col_cfg.output_column}_flag"] = flag | nf[f"{source_column}.{col_cfg.output_column}"].isna()
 
     return nf
 
