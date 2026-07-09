@@ -369,6 +369,7 @@ class UncertaintyCorrectionColumnConfig(BaseModel):
 
 class UncertaintyCorrectionONNXConfig(BaseModel):
     """Configuration for ONNX InferenceSession used for uncertainty correction."""
+
     intra_op_num_threads: int = 0
     inter_op_num_threads: int = 1
     batch_size: int = 1 << 15

@@ -43,7 +43,7 @@ def run_uncertainty_correction(cfg: PipelineConfig, collection_filter: list[str]
         local_model_paths = _download_models(tmpdir, uc_cfg.models)
         visit_detector_path = _preprocess_visit_detector_table(tmpdir, cfg)
 
-        with dask_client(cfg.dask.for_stage(STAGE)) as client:
+        with dask_client(cfg.dask.for_stage(STAGE)) as _client:
             for collection_name, column_cfgs in collections.items():
                 logger.info("Starting uncertainty correction for %s...", collection_name)
                 _uncertainty_correction_collection(
@@ -139,7 +139,9 @@ def _apply_uncle_val_to_partition(
     return nf
 
 
-def _run_uncle_val_model(model_path: Path, inputs: np.ndarray, *, cfg: UncertaintyCorrectionONNXConfig) -> np.ndarray:
+def _run_uncle_val_model(
+    model_path: Path, inputs: np.ndarray, *, cfg: UncertaintyCorrectionONNXConfig
+) -> np.ndarray:
     # Fast path for meta
     if inputs.size == 0:
         return np.array([], dtype=np.float32)
@@ -152,7 +154,7 @@ def _run_uncle_val_model(model_path: Path, inputs: np.ndarray, *, cfg: Uncertain
     expected_input_names = json.loads(session.get_modelmeta().custom_metadata_map["input_names"])
     if len(expected_input_names) != inputs.shape[1]:
         raise ValueError(
-            f"Model at {model_path} expects {len(expected_inputs)} inputs, but got {inputs.shape[1]}"
+            f"Model at {model_path} expects {len(expected_input_names)} inputs, but got {inputs.shape[1]}"
         )
 
     batch_size = cfg.batch_size
@@ -210,7 +212,10 @@ def _add_corrected_error_columns(
             # We set extendedness to zero if no value is available.
             extendedness = np.zeros(len(input_frame), dtype=np.float32)
             for band in LSST_BANDS:
-                extendedness += input_frame[f"{band}_extendedness"].fillna(np.float32(0.0)) * input_frame[f"is_{band}_band"]
+                extendedness += (
+                    input_frame[f"{band}_extendedness"].fillna(np.float32(0.0))
+                    * input_frame[f"is_{band}_band"]
+                )
             input_frame["extendedness"] = extendedness
             input_frame.drop(columns=extendedness_columns)
         case "dia_object_collection":
@@ -232,7 +237,9 @@ def _add_corrected_error_columns(
         uu = np.clip(uu, model_cfg.min_value, model_cfg.max_value)
 
         nf[f"{source_column}.{col_cfg.output_column}"] = uu * nf[f"{source_column}.psfFlux"]
-        nf[f"{source_column}.{col_cfg.output_column}_flag"] = flag | nf[f"{source_column}.{col_cfg.output_column}"].isna()
+        nf[f"{source_column}.{col_cfg.output_column}_flag"] = (
+            flag | nf[f"{source_column}.{col_cfg.output_column}"].isna()
+        )
 
     return nf
 
