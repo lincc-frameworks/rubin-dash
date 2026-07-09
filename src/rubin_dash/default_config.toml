@@ -374,6 +374,14 @@ s3_anon         = true
 # Uncertainty correction
 # ---------------------------------------------------------------------------
 
+[uncertainty_correction]
+debug = false
+
+[uncertainty_correction.onnx]
+intra_op_num_threads = 0
+inter_op_num_threads = 1
+batch_size = 32768
+
 [uncertainty_correction.models.science_source]
 # FIXME
 model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/refs/heads/main/models/2026-06-10_DP2_Object_ForcedSource/MLPModel.onnx"

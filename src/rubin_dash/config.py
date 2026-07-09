@@ -367,9 +367,18 @@ class UncertaintyCorrectionColumnConfig(BaseModel):
     output_column: str
 
 
+class UncertaintyCorrectionONNXConfig(BaseModel):
+    """Configuration for ONNX InferenceSession used for uncertainty correction."""
+    intra_op_num_threads: int = 0
+    inter_op_num_threads: int = 1
+    batch_size: int = 1 << 15
+
+
 class UncertaintyCorrectionConfig(BaseModel):
     """Configuration for uncertainty correction."""
 
+    debug: bool = False
+    onnx: UncertaintyCorrectionONNXConfig = UncertaintyCorrectionONNXConfig()
     models: dict[str, UncertaintyCorrectionModelConfig] = {}
     collections: dict[str, dict[str, UncertaintyCorrectionColumnConfig]] = {}
 
