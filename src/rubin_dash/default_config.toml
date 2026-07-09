@@ -383,17 +383,14 @@ inter_op_num_threads = 1
 batch_size = 32768
 
 [uncertainty_correction.models.science_source]
-# FIXME
-model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/refs/heads/main/models/2026-06-10_DP2_Object_ForcedSource/MLPModel.onnx"
+model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/d7d64fe52d0416aaf847024bf10b67fce75271fc/models/2026-07-08_DP2_Object_ForcedSource/MLPModel.onnx"
 n_inputs = 15
 min_value = 0.02
 max_value = 50.0
 
 [uncertainty_correction.models.diff_source]
-# FIXME
-model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/refs/heads/main/models/2026-06-10_DP2_Object_ForcedSource/MLPModel.onnx"
-# TODO: update to 16
-n_inputs = 15
+model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/d7d64fe52d0416aaf847024bf10b67fce75271fc/models/2026-07-08_DP2_Object_ForcedDiffSource/MLPModel.onnx"
+n_inputs = 16
 min_value = 0.02
 max_value = 50.0
 
@@ -427,7 +424,7 @@ flux_err_column = "psfDiffFluxErr"
 input_columns = [
     "psfDiffFlux",
     "psfDiffFluxErr",
-    # TODO: add "psfFlux"
+    "psfFlux",
     "extendedness",
     "skyBg",
     "seeing",
@@ -474,7 +471,7 @@ flux_err_column = "psfDiffFluxErr"
 input_columns = [
     "psfDiffFlux",
     "psfDiffFluxErr",
-    # TODO: add "psfFlux"
+    "psfFlux",
     "extendedness",
     "skyBg",
     "seeing",
