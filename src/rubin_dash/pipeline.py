@@ -110,10 +110,16 @@ def preflight_checks(
         for collection_name, collection_cfg in active_collections.items():
             nested_name = collection_cfg.nested_catalog
             produced = "nesting" in stages_to_run and nested_name in active_nestings
-            if not produced and not (hats_dir / nested_name).exists():
+            # On resume the collections stage may already have moved the nested catalog
+            # into its collection dir (hats_dir/<collection>/<nested>), so a missing
+            # flat hats_dir/<nested> is fine as long as the moved copy is present.
+            moved_dest = hats_dir / collection_name / nested_name
+            available = (hats_dir / nested_name).exists() or moved_dest.exists()
+            if not produced and not available:
                 errors.append(
                     f"collections '{collection_name}' needs nested catalog '{nested_name}' but "
-                    f"nesting is not running and {hats_dir / nested_name} does not exist."
+                    f"nesting is not running and neither {hats_dir / nested_name} nor "
+                    f"{moved_dest} exists."
                 )
 
     if "crossmatch" in stages_to_run:
