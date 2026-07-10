@@ -236,7 +236,9 @@ def _add_corrected_error_columns(
         flag = (uu < model_cfg.min_value) | (uu > model_cfg.max_value)
         uu = np.clip(uu, model_cfg.min_value, model_cfg.max_value)
 
-        nf[f"{source_column}.{col_cfg.output_column}"] = uu * nf[f"{source_column}.psfFluxErr"]
+        nf[f"{source_column}.{col_cfg.output_column}"] = (
+            uu * nf[f"{source_column}.{col_cfg.input_columns[1]}"]
+        )
         nf[f"{source_column}.{col_cfg.output_column}_flag"] = (
             flag | nf[f"{source_column}.{col_cfg.output_column}"].isna()
         )
