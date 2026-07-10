@@ -20,8 +20,8 @@ n_workers    = 8
 memory_limit = "128GB"
 
 [dask.stages.uncertainty_correction]
-n_workers    = 2
-memory_limit = "512GB"
+n_workers    = 32
+memory_limit = "32GB"
 
 # ---------------------------------------------------------------------------
 # Stages
@@ -385,13 +385,13 @@ batch_size = 32768
 [uncertainty_correction.models.science_source]
 model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/d7d64fe52d0416aaf847024bf10b67fce75271fc/models/2026-07-08_DP2_Object_ForcedSource/MLPModel.onnx"
 n_inputs = 15
-min_value = 0.02
+min_value = 0.1
 max_value = 50.0
 
 [uncertainty_correction.models.diff_source]
 model_path     = "https://github.com/lincc-frameworks/uncle-val/raw/d7d64fe52d0416aaf847024bf10b67fce75271fc/models/2026-07-08_DP2_Object_ForcedDiffSource/MLPModel.onnx"
 n_inputs = 16
-min_value = 0.02
+min_value = 0.1
 max_value = 50.0
 
 [uncertainty_correction.collections.object_collection.forced_science_source]
