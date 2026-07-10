@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import shutil
 
-from hats.io.validation import is_valid_catalog
+from hats.io.validation import is_valid_collection
 from hats_import import pipeline_with_client
 from hats_import.collection.arguments import CollectionArguments
 
@@ -26,7 +26,7 @@ def run_collections(cfg: PipelineConfig, collection_filter: list[str] | None = N
             collection_dir = hats_dir / collection_name
             nested_dest = collection_dir / nested_name
 
-            if cfg.run.resume and is_valid_catalog(collection_dir):
+            if cfg.run.resume and is_valid_collection(collection_dir):
                 logger.info("Skipping '%s' — valid collection already exists.", collection_name)
                 continue
 
