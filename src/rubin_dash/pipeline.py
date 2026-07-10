@@ -102,7 +102,7 @@ def preflight_checks(
                 if cat_name not in cfg.catalogs.enabled and not (hats_dir / cat_name).exists():
                     errors.append(
                         f"nesting '{nested_name}' needs catalog '{cat_name}' but it is not "
-                        f"in collections.enabled and {hats_dir / cat_name} does not exist."
+                        f"in catalogs.enabled and {hats_dir / cat_name} does not exist."
                     )
 
     if "collections" in stages_to_run:
