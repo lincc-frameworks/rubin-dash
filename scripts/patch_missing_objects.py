@@ -45,6 +45,7 @@ from hats.io.paths import HIVE_COLUMNS, get_common_metadata_pointer
 from hats_import import pipeline_with_client
 from hats_import.catalog import ImportArguments
 from hats_import.catalog.file_readers import ParquetPyarrowReader
+from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ def read_ids(files: list[Path], id_column: str, workers: int, label: str) -> np.
         return pq.read_table(f, columns=[id_column])[id_column].to_numpy()
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        parts = list(ex.map(one, files))
+        parts = list(tqdm(ex.map(one, files), total=len(files), desc=label, unit="file", mininterval=5))
     ids = np.concatenate(parts) if parts else np.array([], dtype=np.int64)
     logger.info("%s: %d files, %d rows", label, len(files), len(ids))
     return ids
@@ -150,7 +151,8 @@ def write_mini_files(
         return out, len(out_tbl)
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        results = list(ex.map(build_one, enumerate(flat_files)))
+        results = list(tqdm(ex.map(build_one, enumerate(flat_files)), total=len(flat_files),
+                            desc="mini files", unit="file", mininterval=5))
     files = [f for f, _ in results if f is not None]
     total = sum(n for _, n in results)
     logger.info("wrote %d mini file(s), %d rows, under %s", len(files), total, workdir)
@@ -244,6 +246,8 @@ def main() -> int:
         highest_healpix_order=max_order,
         expected_total_rows=expected_total,
         resume=False,
+        # plain-text one-line-per-step progress — readable in tee'd logs, unlike tqdm's \r bars
+        simple_progress_bar=True,
     )
 
     logger.info("merging %d lc + %d mini files -> %s", len(lc_files), len(mini_files), args.output_dir)

@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import astropy.units as u
 import lsdb
 import nested_pandas as npd
 import numpy as np
@@ -242,6 +243,18 @@ def _add_corrected_error_columns(
         nf[f"{source_column}.{col_cfg.output_column}_flag"] = (
             flag | nf[f"{source_column}.{col_cfg.output_column}"].isna()
         )
+
+        if col_cfg.output_mag_err_column:
+            # Same construction as postprocess._append_mag_and_magerr, using the
+            # corrected flux error: half the AB-magnitude spread at flux +/- err.
+            # input_columns[0] is the flux for both configured models.
+            corr_flux = nf[f"{source_column}.{col_cfg.input_columns[0]}"]
+            corr_err = nf[f"{source_column}.{col_cfg.output_column}"]
+            upper = u.nJy.to(u.ABmag, corr_flux + corr_err)
+            lower = u.nJy.to(u.ABmag, corr_flux - corr_err)
+            nf[f"{source_column}.{col_cfg.output_mag_err_column}"] = pd.Series(
+                (-(upper - lower) / 2).astype(np.float32), index=corr_flux.index
+            )
 
     return nf
 

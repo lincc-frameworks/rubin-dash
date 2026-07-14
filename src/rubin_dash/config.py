@@ -365,6 +365,10 @@ class UncertaintyCorrectionColumnConfig(BaseModel):
     model: str
     input_columns: list[str]
     output_column: str
+    # When set, also emit a magnitude-error column derived from the corrected flux error
+    # via the same formula postprocess uses for the raw MagErr columns. Only meaningful
+    # where a Mag counterpart exists (psf fluxes; diff fluxes go negative and have no Mag).
+    output_mag_err_column: str | None = None
 
 
 class UncertaintyCorrectionONNXConfig(BaseModel):

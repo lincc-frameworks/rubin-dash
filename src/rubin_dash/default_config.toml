@@ -421,6 +421,7 @@ input_columns = [
     "is_y_band",
 ]
 output_column = "psfFluxErr_corrected"
+output_mag_err_column = "psfMagErr_corrected"
 
 [uncertainty_correction.collections.object_collection.forced_diff_source]
 source_column = "objectForcedSource"
@@ -468,6 +469,7 @@ input_columns = [
     "is_y_band",
 ]
 output_column = "psfFluxErr_corrected"
+output_mag_err_column = "psfMagErr_corrected"
 
 [uncertainty_correction.collections.dia_object_collection.forced_diff_source]
 source_column = "diaObjectForcedSource"
