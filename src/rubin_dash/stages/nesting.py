@@ -78,11 +78,15 @@ def _build_nested_catalog(
         ):
             margin_path = hats_dir / f"{source_name}_{nested_cfg.margin_radius_arcsec}arcs"
             src_cat = lsdb.read_hats(hats_dir / source_name, margin_cache=margin_path)
+            # how="left" keeps objects with zero sources (empty/NA nested entries);
+            # the default "inner" silently drops them (chained: one join per source
+            # catalog, so an object needed >=1 row in *every* source table to survive).
             nested_cat = nested_cat.join_nested(
                 src_cat,
                 left_on=nested_cfg.join_id,
                 right_on=nested_cfg.join_id,
                 nested_column_name=column_name,
+                how="left",
             )
 
         logger.info("[%s] Joining and writing intermediate nested catalog...", nested_name)
