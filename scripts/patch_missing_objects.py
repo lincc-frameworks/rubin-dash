@@ -198,12 +198,21 @@ def main() -> int:
     flat_ids = read_ids(flat_files, args.id_column, args.threads, f"flat {args.flat_path.name}")
     lc_ids = read_ids(lc_files, args.id_column, args.threads, f"lc {args.lc_path.name}")
 
-    stray = ~np.isin(lc_ids, flat_ids)
-    if stray.any():
+    # sorted-membership instead of np.isin: two O(n log n) sorts once, then vectorized
+    # searchsorted lookups — minutes faster and far less peak memory at these sizes
+    def member_mask(values: np.ndarray, table_sorted: np.ndarray) -> np.ndarray:
+        pos = np.searchsorted(table_sorted, values)
+        pos[pos == len(table_sorted)] = 0
+        return table_sorted[pos] == values
+
+    flat_sorted = np.sort(flat_ids)
+    lc_sorted = np.sort(lc_ids)
+    n_stray = int((~member_mask(lc_ids, flat_sorted)).sum())
+    if n_stray:
         logger.error("%d LC ids are not in the flat catalog — this is not an inner-join deficit; aborting",
-                     int(stray.sum()))
+                     n_stray)
         return 1
-    missing_mask = ~np.isin(flat_ids, lc_ids)
+    missing_mask = ~member_mask(flat_ids, lc_sorted)
     n_missing = int(missing_mask.sum())
     logger.info("missing objects: %d (flat %d - lc %d)", n_missing, len(flat_ids), len(lc_ids))
     if n_missing == 0 or args.dry_run:
