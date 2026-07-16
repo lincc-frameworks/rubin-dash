@@ -12,7 +12,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from dask.distributed import as_completed
 from hats.catalog import PartitionInfo
-from hats.io import paths
+from hats.io import paths, size_estimates
 from hats.io.parquet_metadata import write_parquet_metadata
 from tqdm.auto import tqdm
 
@@ -183,11 +183,12 @@ def _cast_columns_float32(table: pd.DataFrame) -> pd.DataFrame:
 
 def _rewrite_catalog_metadata(catalog, hats_dir: Path) -> None:
     dest = hats_dir / catalog.catalog_name
-    parquet_rows = write_parquet_metadata(dest)
+    parquet_rows = write_parquet_metadata(dest, create_per_partition_stats=True)
     partition_info = PartitionInfo.read_from_dir(dest)
     partition_info.write_to_file(paths.get_partition_info_pointer(dest))
     now = datetime.now(tz=UTC)
     catalog.catalog_info.copy_and_update(
         total_rows=parquet_rows,
         hats_creation_date=now.strftime("%Y-%m-%dT%H:%M%Z"),
+        hats_estsize=size_estimates.estimate_dir_size(dest, divisor=1024)
     ).to_properties_file(dest)
