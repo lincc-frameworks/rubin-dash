@@ -25,7 +25,6 @@ import argparse
 import logging
 from pathlib import Path
 
-import hats
 from hats.io.parquet_metadata import write_parquet_metadata
 from hats.io.summary_file import (
     write_catalog_summary_file,
@@ -65,6 +64,9 @@ def _run_stats(path: Path, force: bool) -> list[str]:
     if not force and (path / "per_partition_statistics.parquet").exists():
         logger.info("    %-18s exists, skipped", "partition stats")
         return []
+    n_files = sum(1 for _ in (path / "dataset").rglob("*.parquet"))
+    logger.info("    partition stats: sweeping %d file footers (no progress output — "
+                "expect minutes for large catalogs)...", n_files)
     try:
         write_parquet_metadata(path, create_metadata=False, create_per_partition_stats=True)
         logger.info("    %-18s written", "partition stats")
@@ -78,7 +80,12 @@ def catalog_kind(path: Path) -> str:
     """'collection', 'margin', 'index', or 'catalog' (object/source/anything else)."""
     if (path / "collection.properties").exists():
         return "collection"
-    ctype = str(hats.read_hats(path).catalog_info.catalog_type).lower()
+    # parse the properties file directly — no need to load the whole catalog to classify
+    ctype = ""
+    for line in (path / "properties").read_text().splitlines():
+        if line.strip().startswith("dataproduct_type"):
+            ctype = line.split("=", 1)[1].strip().lower()
+            break
     if "margin" in ctype:
         return "margin"
     if "index" in ctype:
@@ -121,6 +128,7 @@ def main() -> int:
     if not entries:
         logger.error("nothing to process under %s", args.root)
         return 1
+    logger.info("processing %d entries under %s", len(entries), args.root)
 
     failures = []
     for entry in entries:
