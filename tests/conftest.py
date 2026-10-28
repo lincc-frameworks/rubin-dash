@@ -1,5 +1,6 @@
 """Root conftest — installed before any collection so LSST stubs are in place
 when pytest imports src/ modules for --doctest-modules."""
+
 import sys
 from unittest.mock import MagicMock
 

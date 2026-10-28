@@ -1,5 +1,6 @@
 """DimensionParquetReader — reads batched CSV index files pointing to parquet URIs,
 adding dimension columns (tract, patch, band, etc.) from the index row."""
+
 from __future__ import annotations
 
 import numpy as np
